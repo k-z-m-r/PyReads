@@ -1,0 +1,17 @@
+[project]
+dependencies = [
+    "htmlx",
+    "bs4"
+]
+name = "pyreads"
+version = "0"
+description = "Goodreads webscraper"
+readme = "README.md"
+
+[tool.uv]
+default-groups = []
+
+[dependency-groups]
+dev = [
+  "jupyter",
+]

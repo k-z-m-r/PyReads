@@ -1,12 +1,15 @@
 [project]
 dependencies = [
-    "htmlx",
-    "bs4"
+    "httpx",
+    "bs4",
+    "lxml",
+    "pandas"
 ]
 name = "pyreads"
 version = "0"
 description = "Goodreads webscraper"
 readme = "README.md"
+requires-python = ">3.11"
 
 [tool.uv]
 default-groups = []

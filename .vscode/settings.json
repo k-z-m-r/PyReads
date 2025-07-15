@@ -23,4 +23,7 @@
       "--strict"
   ],
   "rewrap.autoWrap.enabled": true,
+  "files.associations": {
+      "*.ipynb": "python"
+    },
 }

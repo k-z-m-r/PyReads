@@ -7,7 +7,7 @@ from datetime import datetime
 import httpx
 from bs4 import BeautifulSoup
 
-from .models import Book
+from .models import Book, Library
 from .utilities import STRING_TO_RATING
 
 
@@ -114,7 +114,7 @@ def extract_books_from_html(html):
     return data
 
 
-def get_library(user_id: int) -> list[Book]:
+def get_library(user_id: int) -> Library:
     url = format_url(user_id)
     html = get_response(url)
     soup = BeautifulSoup(html, "html.parser")
@@ -127,4 +127,4 @@ def get_library(user_id: int) -> list[Book]:
         next_url = format_url(user_id, page)
         html = get_response(next_url)
         books += extract_books_from_html(html)
-    return books
+    return Library(owner=user_id, books=books)

@@ -7,8 +7,8 @@ from datetime import datetime
 import httpx
 from bs4 import BeautifulSoup
 
+from ._utilities import STRING_TO_RATING
 from .models import Book, Library
-from .utilities import STRING_TO_RATING
 
 
 def parse_date(date_str):

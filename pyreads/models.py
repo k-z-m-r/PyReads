@@ -2,6 +2,7 @@
 
 from datetime import datetime
 
+from pandas import DataFrame
 from pydantic import BaseModel, model_validator
 
 
@@ -32,3 +33,12 @@ class Book(BaseModel):
                 "Both series and seriesNumber must be set together or both be None."
             )
         return self
+
+
+class Library(BaseModel):
+    owner: int
+    books: list[Book]
+
+    @property
+    def dataframe(self) -> DataFrame:
+        return DataFrame([book.model_dump() for book in self.books])

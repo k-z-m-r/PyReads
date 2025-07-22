@@ -3,7 +3,8 @@ dependencies = [
     "httpx",
     "bs4",
     "lxml",
-    "pandas"
+    "pandas",
+    "pydantic"
 ]
 name = "pyreads"
 version = "0"

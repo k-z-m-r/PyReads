@@ -16,12 +16,6 @@
         80
     ]
   },
-  "mypy-type-checker.args": [
-      "--ignore-missing-imports",
-      "--follow-imports=silent",
-      "--show-column-numbers",
-      "--strict"
-  ],
   "rewrap.autoWrap.enabled": true,
   "files.associations": {
       "*.ipynb": "python"

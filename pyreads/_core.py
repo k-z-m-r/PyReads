@@ -2,32 +2,13 @@
 
 import concurrent.futures
 import re
-from calendar import monthrange
-from datetime import datetime
 from os import cpu_count
 
 import httpx
 from bs4 import BeautifulSoup
 
-from ._utilities import STRING_TO_RATING, Rating
+from ._utilities import STRING_TO_RATING, Rating, format_url, parse_date
 from .models import Book, Library
-
-
-def parse_date(date_str):
-    for fmt in ("%b %d, %Y", "%b %Y"):
-        try:
-            dt = datetime.strptime(date_str, fmt)
-            if fmt == "%b %Y":
-                last_day = monthrange(dt.year, dt.month)[1]
-                dt = dt.replace(day=last_day)
-            return dt
-        except Exception:
-            continue
-    return None
-
-
-def format_url(user_id: int, page: int = 1):
-    return f"https://www.goodreads.com/review/list/{user_id}?page={page}&shelf=read"
 
 
 def get_response(client: httpx.Client, url: str) -> str:
@@ -40,7 +21,7 @@ def get_response(client: httpx.Client, url: str) -> str:
         raise ValueError(f"Unexpected status: {response.status_code}")
 
 
-def extract_books_from_html(html: str):
+def extract_books_from_html(html: str) -> list[Book]:
     soup = BeautifulSoup(html, "html.parser")
     review_trs = soup.find_all("tr", id=re.compile(r"^review_"))
     data = []
@@ -101,7 +82,7 @@ def extract_books_from_html(html: str):
     return data
 
 
-def fetch_page(client, user_id, page):
+def fetch_page(client: httpx.Client, user_id: int, page: int) -> list[Book]:
     url = format_url(user_id, page)
     html = get_response(client, url)
     return extract_books_from_html(html)

@@ -1,6 +1,7 @@
 """Pydantic data models."""
 
 from datetime import datetime
+from typing import Self
 
 from pandas import DataFrame
 from pydantic import BaseModel, model_validator
@@ -27,7 +28,7 @@ class Book(BaseModel):
         return title
 
     @model_validator(mode="after")
-    def check_series_fields(self) -> "Book":
+    def validate_series(self) -> Self:
         if (self.series is not None) != (self.seriesNumber is not None):
             raise ValueError(
                 "Both series and seriesNumber must be set together or both be None."

@@ -1,5 +1,7 @@
 """Utilities to support core functionality."""
 
+from calendar import monthrange
+from datetime import datetime
 from enum import IntEnum, unique
 
 
@@ -20,3 +22,19 @@ STRING_TO_RATING = {
     "really liked it": Rating.REALLY_LIKED_IT,
     "it was amazing": Rating.IT_WAS_AMAZING,
 }
+
+
+def parse_date(date: str) -> datetime | None:
+    for fmt in ("%b %d, %Y", "%b %Y"):
+        try:
+            dt = datetime.strptime(date, fmt)
+            if fmt == "%b %Y":
+                dt = dt.replace(day=monthrange(dt.year, dt.month)[1])
+            return dt
+        except ValueError:
+            pass
+    return None
+
+
+def format_url(user_id: int, page: int = 1) -> str:
+    return f"https://www.goodreads.com/review/list/{user_id}?page={page}&shelf=read"

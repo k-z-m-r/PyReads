@@ -20,4 +20,10 @@
   "files.associations": {
       "*.ipynb": "python"
     },
+  "mypy-type-checker.args": [
+        "--ignore-missing-imports",
+        "--follow-imports=silent",
+        "--show-column-numbers",
+        "--strict"
+    ],
 }

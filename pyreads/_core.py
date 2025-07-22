@@ -7,18 +7,30 @@ from os import cpu_count
 import httpx
 from bs4 import BeautifulSoup
 
-from ._utilities import STRING_TO_RATING, Rating, format_url, parse_date
-from .models import Book, Library
+from pyreads._utilities import STRING_TO_RATING, Rating, format_url, parse_date
+from pyreads.models import Book, Library
 
 
 def get_response(client: httpx.Client, url: str) -> str:
+    """
+    Sends a GET request to the specified URL using the provided HTTP client and returns the response text.
+
+    Args:
+        client: The HTTP client used to send the request.
+        url: The URL to send the GET request to.
+
+    Returns:
+        The response text if the request is successful.
+    """
+
     response = client.get(url)
     if response.status_code == 200:
         return response.text
-    elif response.status_code == 404:
-        raise ValueError(f"404 Not Found: {response.url}")
-    else:
-        raise ValueError(f"Unexpected status: {response.status_code}")
+    raise ValueError(f"{response.status_code} Error: {response.url}")
+
+
+def fetch_page(client: httpx.Client, user_id: int, page: int) -> list[Book]:
+    return extract_books_from_html(get_response(client, format_url(user_id, page)))
 
 
 def extract_books_from_html(html: str) -> list[Book]:
@@ -80,12 +92,6 @@ def extract_books_from_html(html: str) -> list[Book]:
             )
             data.append(book)
     return data
-
-
-def fetch_page(client: httpx.Client, user_id: int, page: int) -> list[Book]:
-    url = format_url(user_id, page)
-    html = get_response(client, url)
-    return extract_books_from_html(html)
 
 
 def get_library(user_id: int) -> Library:

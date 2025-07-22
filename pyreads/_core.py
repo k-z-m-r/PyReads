@@ -9,7 +9,7 @@ from os import cpu_count
 import httpx
 from bs4 import BeautifulSoup
 
-from ._utilities import STRING_TO_RATING
+from ._utilities import STRING_TO_RATING, Rating
 from .models import Book, Library
 
 
@@ -85,7 +85,7 @@ def extract_books_from_html(html: str):
             if rating_span and rating_span.has_attr("title")
             else None
         )
-        rating = STRING_TO_RATING.get(rating_text, 0)
+        rating = STRING_TO_RATING.get(rating_text, Rating.NO_RATING)
 
         if author_name and title and date_read is not None:
             book = Book(

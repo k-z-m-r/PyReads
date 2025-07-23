@@ -15,6 +15,7 @@ from pyreads._parser import (
     PageNumberParser,
     RatingParser,
     ReviewParser,
+    SeriesParser,
     TitleParser,
 )
 
@@ -63,7 +64,8 @@ def _parse_goodreads_html(html: str) -> list[Book]:
         date_read = DateParser.parse(tr)
         review_text = ReviewParser.parse(tr)
         author_name = AuthorParser.parse(tr)
-        title, series, series_number = TitleParser.parse(tr)
+        title = TitleParser.parse(tr)
+        series = SeriesParser.parse(tr)
         rating = RatingParser.parse(tr)
         number_of_pages = PageNumberParser.parse(tr)
 
@@ -76,7 +78,6 @@ def _parse_goodreads_html(html: str) -> list[Book]:
                 userRating=rating,
                 review=review_text,
                 series=series,
-                seriesNumber=series_number,
             )
             data.append(book)
     return data

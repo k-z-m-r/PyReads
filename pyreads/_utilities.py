@@ -13,6 +13,7 @@ class Rating(IntEnum):
 
 
 STRING_TO_RATING = {
+    None: Rating.NO_RATING,
     "did not like it": Rating.DID_NOT_LIKE_IT,
     "it was ok": Rating.IT_WAS_OK,
     "liked it": Rating.LIKED_IT,

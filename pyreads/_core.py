@@ -8,12 +8,14 @@ import httpx
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 
-from pyreads._utilities import (
+from pyreads._parser import (
     AuthorParser,
     DateParser,
     RatingParser,
     ReviewParser,
     TitleParser,
+)
+from pyreads._utilities import (
     format_url,
 )
 from pyreads.models import Book, Library

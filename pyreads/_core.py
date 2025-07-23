@@ -3,20 +3,16 @@
 import concurrent.futures
 import re
 from os import cpu_count
+from typing import Any
 
 import httpx
 from bs4 import BeautifulSoup
 from bs4.element import Tag
+from pydantic import ValidationError
 
 from pyreads._models import Book, Library
 from pyreads._parser import (
-    AuthorParser,
-    DateParser,
-    PageNumberParser,
-    RatingParser,
-    ReviewParser,
-    SeriesParser,
-    TitleParser,
+    _PARSERS,
 )
 
 # --------------------
@@ -57,30 +53,23 @@ def _parse_goodreads_html(html: str) -> list[Book]:
 
     soup = BeautifulSoup(html, "html.parser")
     review_trs = soup.find_all("tr", id=re.compile(r"^review_"))
-    data = []
+    books = []
 
     for tr in review_trs:
         assert isinstance(tr, Tag)
-        date_read = DateParser.parse(tr)
-        review_text = ReviewParser.parse(tr)
-        author_name = AuthorParser.parse(tr)
-        title = TitleParser.parse(tr)
-        series = SeriesParser.parse(tr)
-        rating = RatingParser.parse(tr)
-        number_of_pages = PageNumberParser.parse(tr)
+        attributes: dict[str, Any] = {}
+        for attribute, parser in _PARSERS.items():
+            value = parser.parse(tr)
+            attributes[attribute] = value
 
-        if author_name and title and date_read is not None:
-            book = Book(
-                authorName=author_name,
-                title=title,
-                dateRead=date_read,
-                numberOfPages=number_of_pages,
-                userRating=rating,
-                review=review_text,
-                series=series,
-            )
-            data.append(book)
-    return data
+        try:
+            book = Book(**attributes)
+        except ValidationError:
+            continue
+        else:
+            books.append(book)
+
+    return books
 
 
 # --------------------

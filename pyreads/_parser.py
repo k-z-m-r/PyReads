@@ -114,3 +114,14 @@ class TitleParser(Parser):
                 series_number = int(match.group(2))
 
         return raw_title, series_name, series_number
+
+
+# TODO: add helper function which compiles values into model dict?
+PARSERS = [
+    AuthorParser,
+    DateParser,
+    PageNumberParser,
+    RatingParser,
+    ReviewParser,
+    TitleParser,
+]

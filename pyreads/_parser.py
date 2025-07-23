@@ -12,14 +12,14 @@ from pyreads._models import Series
 from pyreads._utilities import STRING_TO_RATING
 
 
-class Parser(ABC):
+class _Parser(ABC):
     @staticmethod
     @abstractmethod
     def parse(row: Tag) -> Any:
         pass
 
 
-class AuthorParser(Parser):
+class _AuthorParser(_Parser):
     @staticmethod
     def parse(row: Tag) -> str | None:
         author_cell = row.find("td", class_="field author")
@@ -27,7 +27,7 @@ class AuthorParser(Parser):
         return author_link.get_text(strip=True) if author_link else None
 
 
-class DateParser(Parser):
+class _DateParser(_Parser):
     @staticmethod
     def parse(row: Tag) -> datetime | None:
         date_span = row.find("span", class_="date_read_value")
@@ -47,7 +47,7 @@ class DateParser(Parser):
         return None
 
 
-class PageNumberParser(Parser):
+class _PageNumberParser(_Parser):
     @staticmethod
     def parse(row: Tag) -> int | None:
         num_pages_cell = row.find("td", class_="field num_pages")
@@ -69,7 +69,7 @@ class PageNumberParser(Parser):
         return None
 
 
-class RatingParser(Parser):
+class _RatingParser(_Parser):
     @staticmethod
     def parse(row: Tag) -> int:
         rating_cell = row.find("td", class_="field rating")
@@ -84,14 +84,14 @@ class RatingParser(Parser):
         return STRING_TO_RATING.get(tooltip_text, 0)
 
 
-class ReviewParser(Parser):
+class _ReviewParser(_Parser):
     @staticmethod
     def parse(row: Tag) -> str | None:
         review_span = row.find("span", {"id": re.compile(r"^freeTextContainerreview")})
         return review_span.get_text(strip=True) if review_span else None
 
 
-class SeriesParser(Parser):
+class _SeriesParser(_Parser):
     @staticmethod
     def parse(row: Tag) -> Series | None:
         title_cell = row.find("td", class_="field title")
@@ -123,7 +123,7 @@ class SeriesParser(Parser):
         return None
 
 
-class TitleParser(Parser):
+class _TitleParser(_Parser):
     @staticmethod
     def parse(row: Tag) -> str | None:
         title_cell = row.find("td", class_="field title")
@@ -140,11 +140,12 @@ class TitleParser(Parser):
 
 
 # TODO: add helper function which compiles values into model dict?
-PARSERS = [
-    AuthorParser,
-    DateParser,
-    PageNumberParser,
-    RatingParser,
-    ReviewParser,
-    TitleParser,
-]
+_PARSERS: dict[str, type[_Parser]] = {
+    "authorName": _AuthorParser,
+    "dateRead": _DateParser,
+    "numberOfPages": _PageNumberParser,
+    "userRating": _RatingParser,
+    "userReview": _ReviewParser,
+    "title": _TitleParser,
+    "series": _SeriesParser,
+}

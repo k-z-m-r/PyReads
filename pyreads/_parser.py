@@ -46,9 +46,31 @@ class DateParser(Parser):
         return None
 
 
-class RatingParser(Parser):
+class PageNumberParser(Parser):
     @staticmethod
     def parse(row: Tag) -> int | None:
+        num_pages_cell = row.find("td", class_="field num_pages")
+        if not num_pages_cell:
+            return None
+
+        value_container = num_pages_cell.find("div", class_="value")
+        if not value_container:
+            return None
+
+        page_info = value_container.find("nobr")
+        if not page_info or not page_info.contents:
+            return None
+
+        for element in page_info.contents:
+            if isinstance(element, str) and element.strip().isdigit():
+                return int(element.strip())
+
+        return None
+
+
+class RatingParser(Parser):
+    @staticmethod
+    def parse(row: Tag) -> int:
         rating_cell = row.find("td", class_="field rating")
         rating_span = (
             rating_cell.find("span", class_="staticStars") if rating_cell else None
@@ -58,7 +80,7 @@ class RatingParser(Parser):
             if rating_span and rating_span.has_attr("title")
             else None
         )
-        return STRING_TO_RATING.get(tooltip_text)
+        return STRING_TO_RATING.get(tooltip_text, 0)
 
 
 class ReviewParser(Parser):

@@ -12,6 +12,7 @@ class Book(BaseModel):
     series: str | None = None
     seriesNumber: int | None = None
     authorName: str
+    numberOfPages: int | None
     dateRead: datetime
     userRating: int
     review: str | None = None

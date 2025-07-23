@@ -12,6 +12,7 @@ from pyreads._models import Book, Library
 from pyreads._parser import (
     AuthorParser,
     DateParser,
+    PageNumberParser,
     RatingParser,
     ReviewParser,
     TitleParser,
@@ -64,12 +65,14 @@ def _parse_goodreads_html(html: str) -> list[Book]:
         author_name = AuthorParser.parse(tr)
         title, series, series_number = TitleParser.parse(tr)
         rating = RatingParser.parse(tr)
+        number_of_pages = PageNumberParser.parse(tr)
 
         if author_name and title and date_read is not None:
             book = Book(
                 authorName=author_name,
                 title=title,
                 dateRead=date_read,
+                numberOfPages=number_of_pages,
                 userRating=rating,
                 review=review_text,
                 series=series,

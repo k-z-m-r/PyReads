@@ -8,6 +8,7 @@ from typing import Any
 
 from bs4.element import Tag
 
+from pyreads._models import Series
 from pyreads._utilities import STRING_TO_RATING
 
 
@@ -90,30 +91,52 @@ class ReviewParser(Parser):
         return review_span.get_text(strip=True) if review_span else None
 
 
-class TitleParser(Parser):
+class SeriesParser(Parser):
     @staticmethod
-    def parse(row: Tag) -> tuple[str | None, str | None, int | None]:
+    def parse(row: Tag) -> Series | None:
         title_cell = row.find("td", class_="field title")
         title_link = title_cell.find("a") if title_cell else None
         if not title_link:
-            return None, None, None
+            return None
+
+        # Try series span first
+        series_span = title_link.find("span", class_="darkGreyText")
+        if series_span:
+            series_text = series_span.get_text(strip=True)
+            match = re.match(r"\((.*?)(?:,\s*|\s+)#(\d+)\)", series_text)
+            if match:
+                return Series(name=match.group(1).strip(), number=int(match.group(2)))
+
+        # If no span, fallback to inline Vol. in title text
+        raw_title = (
+            title_link.contents[0].strip()
+            if title_link.contents
+            else title_link.get_text(strip=True)
+        )
+        fallback_match = re.match(r"^(.*?)(?:,)?\s*Vol\.\s*(\d+)\b", raw_title)
+        if fallback_match:
+            return Series(
+                name=fallback_match.group(1).strip(),
+                number=int(fallback_match.group(2)),
+            )
+
+        return None
+
+
+class TitleParser(Parser):
+    @staticmethod
+    def parse(row: Tag) -> str | None:
+        title_cell = row.find("td", class_="field title")
+        title_link = title_cell.find("a") if title_cell else None
+        if not title_link:
+            return None
 
         raw_title = (
             title_link.contents[0].strip()
             if title_link.contents
             else title_link.get_text(strip=True)
         )
-
-        series_name, series_number = None, None
-        series_span = title_link.find("span", class_="darkGreyText")
-        if series_span:
-            series_text = series_span.get_text(strip=True)
-            match = re.match(r"\((.*),\s*#(\d+)\)", series_text)
-            if match:
-                series_name = match.group(1)
-                series_number = int(match.group(2))
-
-        return raw_title, series_name, series_number
+        return raw_title
 
 
 # TODO: add helper function which compiles values into model dict?

@@ -1,9 +1,8 @@
 """Utilities to support core functionality."""
 
-from enum import IntEnum, unique
+from enum import IntEnum
 
 
-@unique
 class Rating(IntEnum):
     NO_RATING = 0
     DID_NOT_LIKE_IT = 1
@@ -20,7 +19,3 @@ STRING_TO_RATING = {
     "really liked it": Rating.REALLY_LIKED_IT,
     "it was amazing": Rating.IT_WAS_AMAZING,
 }
-
-
-def format_url(user_id: int, page: int = 1) -> str:
-    return f"https://www.goodreads.com/review/list/{user_id}?page={page}&shelf=read"

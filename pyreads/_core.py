@@ -8,6 +8,7 @@ import httpx
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 
+from pyreads._models import Book, Library
 from pyreads._parser import (
     AuthorParser,
     DateParser,
@@ -15,16 +16,17 @@ from pyreads._parser import (
     ReviewParser,
     TitleParser,
 )
-from pyreads._utilities import (
-    format_url,
-)
-from pyreads.models import Book, Library
-
 
 # --------------------
 # Internal HTTP Helpers
 # --------------------
-def _get_response(client: httpx.Client, url: str) -> str:
+
+
+def _format_goodreads_url(user_id: int, page: int = 1) -> str:
+    return f"https://www.goodreads.com/review/list/{user_id}?page={page}&shelf=read"
+
+
+def _get_goodreads_html(client: httpx.Client, url: str) -> str:
     """
     Internal: Sends a GET request and returns the response text, or raises ValueError on error.
     """
@@ -38,15 +40,15 @@ def _fetch_page(client: httpx.Client, user_id: int, page: int) -> list[Book]:
     """
     Internal: Fetches a single Goodreads page and parses books from HTML.
     """
-    url = format_url(user_id, page)
-    html = _get_response(client, url)
-    return _parse_books_html(html)
+    url = _format_goodreads_url(user_id, page)
+    html = _get_goodreads_html(client, url)
+    return _parse_goodreads_html(html)
 
 
 # --------------------
 # Internal HTML Parsing
 # --------------------
-def _parse_books_html(html: str) -> list[Book]:
+def _parse_goodreads_html(html: str) -> list[Book]:
     """
     Internal: Parses Goodreads shelf HTML and returns a list of Book objects.
     """
@@ -101,9 +103,9 @@ def get_library(user_id: int) -> Library:
     books = []
     with httpx.Client(headers=headers, follow_redirects=True, timeout=10) as client:
         # Fetch first page
-        first_url = format_url(user_id, 1)
-        first_html = _get_response(client, first_url)
-        books += _parse_books_html(first_html)
+        first_url = _format_goodreads_url(user_id, 1)
+        first_html = _get_goodreads_html(client, first_url)
+        books += _parse_goodreads_html(first_html)
 
         # Determine total number of pages
         soup = BeautifulSoup(first_html, "html.parser")

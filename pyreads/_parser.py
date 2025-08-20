@@ -11,7 +11,6 @@ from bs4.element import PageElement, Tag
 from typing_extensions import override
 
 from pyreads._models import Series
-from pyreads._utilities import STRING_TO_RATING
 
 # --- Precompiled patterns -----------------------------------------------------
 
@@ -22,6 +21,13 @@ _SERIES_FALLBACK_PATTERN = re.compile(r"^(.*?)(?:,)?\s*Vol\.\s*(\d+)\b")
 
 _DATE_FORMATS = ("%b %d, %Y", "%b %Y")
 
+_STRING_TO_RATING = {
+    "did not like it": 1,
+    "it was ok": 2,
+    "liked it": 3,
+    "really liked it": 4,
+    "it was amazing": 5,
+}
 
 # --- Helpers ------------------------------------------------------------------
 
@@ -136,7 +142,7 @@ class _RatingParser(_Parser):
         title = span.get("title") if isinstance(span, Tag) else None
         if not isinstance(title, str):
             return 0
-        return int(STRING_TO_RATING.get(title.lower(), 0))
+        return int(_STRING_TO_RATING.get(title.lower(), 0))
 
 
 class _ReviewParser(_Parser):

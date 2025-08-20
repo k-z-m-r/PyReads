@@ -18,4 +18,6 @@ default-groups = []
 [dependency-groups]
 dev = [
   "jupyter",
+  "pytest",
+  "coverage"
 ]

@@ -1,143 +1,209 @@
-"""Parsers extract information from HTML elements."""
+"""Parsers extract information from Goodreads HTML review rows."""
+
+from __future__ import annotations
 
 import re
 from abc import ABC, abstractmethod
-from calendar import monthrange
 from datetime import datetime
 from typing import Any
 
-from bs4.element import Tag
+from bs4.element import PageElement, Tag
+from typing_extensions import override
 
 from pyreads._models import Series
 from pyreads._utilities import STRING_TO_RATING
 
+# --- Precompiled patterns -----------------------------------------------------
+
+_REVIEW_ID_PATTERN = re.compile(r"^freeTextContainerreview")
+_PAGE_NUMBER_PATTERN = re.compile(r"(\d{1,6})(?=\D|$)")  # matches "411" in "411pp"
+_SERIES_PATTERN = re.compile(r"\((.*?)(?:,\s*|\s+)#(\d+)\)")
+_SERIES_FALLBACK_PATTERN = re.compile(r"^(.*?)(?:,)?\s*Vol\.\s*(\d+)\b")
+
+_DATE_FORMATS = ("%b %d, %Y", "%b %Y")
+
+
+# --- Helpers ------------------------------------------------------------------
+
+
+def _safe_find_text(
+    element: Tag | PageElement | None, strip: bool = True
+) -> str | None:
+    """Safely extract text from an element, returning None if element is None/empty."""
+    return element.get_text(strip=strip) or None if element else None
+
+
+def _get_field_cell(row: Tag, field_name: str) -> Tag | None:
+    """Return the <td class='field {field_name}'> cell, or None if not present."""
+    el = row.find("td", class_=f"field {field_name}")
+    return el if isinstance(el, Tag) else None
+
+
+def _extract_number(text: str | None, pattern: re.Pattern[str]) -> int | None:
+    """Extract the first integer using `pattern` from `text`; return None on failure."""
+    if not text:
+        return None
+    m = pattern.search(text)
+    return int(m.group(1)) if m else None
+
+
+# --- Parser base --------------------------------------------------------------
+
 
 class _Parser(ABC):
+    """Abstract base class for all field parsers."""
+
     @staticmethod
     @abstractmethod
-    def parse(row: Tag) -> Any:
-        pass
+    def parse(row: Tag) -> Any | None:
+        """Extract a value from a Goodreads review table row.
+
+        Args:
+            row: The BS4 Tag to extract information from.
+
+        Returns:
+            Value from the tag, or None if no value found.
+        """
+        raise NotImplementedError
+
+
+# --- Concrete parsers ---------------------------------------------------------
 
 
 class _AuthorParser(_Parser):
+    """Extract author name from review row."""
+
+    @override
     @staticmethod
     def parse(row: Tag) -> str | None:
-        author_cell = row.find("td", class_="field author")
-        author_link = author_cell.find("a") if author_cell else None
-        return author_link.get_text(strip=True) if author_link else None
+        cell = _get_field_cell(row, "author")
+        if not cell:
+            return None
+        link = cell.find("a")
+        return _safe_find_text(link)
 
 
 class _DateParser(_Parser):
+    """Extract and parse date read from review row."""
+
+    @override
     @staticmethod
     def parse(row: Tag) -> datetime | None:
-        date_span = row.find("span", class_="date_read_value")
-        date_string = date_span.get_text(strip=True) if date_span else None
+        cell = _get_field_cell(row, "date_read")
+        if not cell:
+            return None
+
+        # Prefer explicit "date_read_value"; fall back to any <span title="...">
+        span = cell.find("span", class_="date_read_value") or cell.find(
+            "span", title=True
+        )
+        date_string = _safe_find_text(span)
         if not date_string:
             return None
 
-        for format_pattern in ("%b %d, %Y", "%b %Y"):
+        for fmt in _DATE_FORMATS:
             try:
-                parsed_date = datetime.strptime(date_string, format_pattern)
-                if format_pattern == "%b %Y":
-                    last_day = monthrange(parsed_date.year, parsed_date.month)[1]
-                    parsed_date = parsed_date.replace(day=last_day)
-                return parsed_date
+                return datetime.strptime(date_string, fmt)
             except ValueError:
                 continue
         return None
 
 
 class _PageNumberParser(_Parser):
+    """Extract number of pages from review row."""
+
+    @override
     @staticmethod
     def parse(row: Tag) -> int | None:
-        num_pages_cell = row.find("td", class_="field num_pages")
-        if not num_pages_cell:
+        cell = _get_field_cell(row, "num_pages")
+        if not cell:
             return None
-
-        value_container = num_pages_cell.find("div", class_="value")
-        if not value_container:
-            return None
-
-        page_info = value_container.find("nobr")
-        if not page_info or not page_info.contents:
-            return None
-
-        for element in page_info.contents:
-            if isinstance(element, str) and element.strip().isdigit():
-                return int(element.strip())
-
-        return None
+        nobr = cell.find("nobr")
+        text = _safe_find_text(nobr, strip=True)
+        return _extract_number(text, _PAGE_NUMBER_PATTERN)
 
 
 class _RatingParser(_Parser):
+    """Extract user rating from review row."""
+
+    @override
     @staticmethod
     def parse(row: Tag) -> int:
-        rating_cell = row.find("td", class_="field rating")
-        rating_span = (
-            rating_cell.find("span", class_="staticStars") if rating_cell else None
-        )
-        tooltip_text = (
-            rating_span.get("title")
-            if rating_span and rating_span.has_attr("title")
-            else None
-        )
-        return STRING_TO_RATING.get(tooltip_text, 0)
+        cell = _get_field_cell(row, "rating")
+        if not cell:
+            return 0
+        span = cell.find("span", class_="staticStars")
+        title = span.get("title") if isinstance(span, Tag) else None
+        if not isinstance(title, str):
+            return 0
+        return int(STRING_TO_RATING.get(title.lower(), 0))
 
 
 class _ReviewParser(_Parser):
+    """Extract review text from review row."""
+
+    @override
     @staticmethod
     def parse(row: Tag) -> str | None:
-        review_span = row.find("span", {"id": re.compile(r"^freeTextContainerreview")})
-        return review_span.get_text(strip=True) if review_span else None
+        span = row.find("span", {"id": _REVIEW_ID_PATTERN})
+        return _safe_find_text(span)
 
 
 class _SeriesParser(_Parser):
+    """Extract series information from review row."""
+
+    @override
     @staticmethod
     def parse(row: Tag) -> Series | None:
-        title_cell = row.find("td", class_="field title")
-        title_link = title_cell.find("a") if title_cell else None
-        if not title_link:
+        cell = _get_field_cell(row, "title")
+        if not cell:
             return None
 
-        # Try series span first
-        series_span = title_link.find("span", class_="darkGreyText")
-        if series_span:
-            series_text = series_span.get_text(strip=True)
-            match = re.match(r"\((.*?)(?:,\s*|\s+)#(\d+)\)", series_text)
-            if match:
-                return Series(name=match.group(1).strip(), number=int(match.group(2)))
+        link = cell.find("a")
+        if not isinstance(link, Tag):
+            return None
 
-        # If no span, fallback to inline Vol. in title text
-        raw_title = (
-            title_link.contents[0].strip()
-            if title_link.contents
-            else title_link.get_text(strip=True)
-        )
-        fallback_match = re.match(r"^(.*?)(?:,)?\s*Vol\.\s*(\d+)\b", raw_title)
-        if fallback_match:
-            return Series(
-                name=fallback_match.group(1).strip(),
-                number=int(fallback_match.group(2)),
-            )
+        # Prefer explicit series span inside the title link
+        series_span = link.find("span", class_="darkGreyText")
+        if isinstance(series_span, Tag):
+            series_text = _safe_find_text(series_span, strip=True)
+            if series_text:
+                m = _SERIES_PATTERN.match(series_text)
+                if m:
+                    return Series(name=m.group(1).strip(), number=int(m.group(2)))
+
+        # Fallback: detect "Vol. N" in the raw title text
+        raw_title = _safe_find_text(link)
+        if raw_title:
+            m2 = _SERIES_FALLBACK_PATTERN.match(raw_title)
+            if m2:
+                return Series(name=m2.group(1).strip(), number=int(m2.group(2)))
 
         return None
 
 
 class _TitleParser(_Parser):
+    """Extract book title from review row."""
+
+    @override
     @staticmethod
-    def parse(row: Tag) -> str | None:
-        title_cell = row.find("td", class_="field title")
-        title_link = title_cell.find("a") if title_cell else None
-        if not title_link:
-            return None
+    def parse(row: Tag) -> str:
+        cell = _get_field_cell(row, "title")
+        if not cell:
+            return ""
 
-        raw_title = (
-            title_link.contents[0].strip()
-            if title_link.contents
-            else title_link.get_text(strip=True)
-        )
-        return raw_title
+        link = cell.find("a")
+        if not isinstance(link, Tag):
+            return ""
 
+        # Prefer the direct text node (avoids series span text)
+        if link.contents and isinstance(link.contents[0], str):
+            return link.contents[0].strip()
+
+        return link.get_text(strip=True) or ""
+
+
+# --- Registry -----------------------------------------------------------------
 
 # TODO: add helper function which compiles values into model dict?
 _PARSERS: dict[str, type[_Parser]] = {

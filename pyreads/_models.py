@@ -3,7 +3,7 @@
 from datetime import datetime
 
 from pandas import DataFrame
-from pydantic import BaseModel
+from pydantic import BaseModel, PrivateAttr
 
 
 class Series(BaseModel):
@@ -36,6 +36,13 @@ class Library(BaseModel):
     owner: int
     books: list[Book]
 
+    _dataframe: DataFrame = PrivateAttr()
+
+    def model_post_init(self, __context: dict[object, object]) -> None:
+        del __context
+
+        self._dataframe = DataFrame([book.model_dump() for book in self.books])
+
     @property
     def dataframe(self) -> DataFrame:
-        return DataFrame([book.model_dump() for book in self.books])
+        return self._dataframe

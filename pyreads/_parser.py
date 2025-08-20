@@ -12,10 +12,10 @@ from typing_extensions import override
 
 from pyreads._models import Series
 
-# --- Precompiled patterns -----------------------------------------------------
+# --- Constants ----------------------------------------------------------------
 
 _REVIEW_ID_PATTERN = re.compile(r"^freeTextContainerreview")
-_PAGE_NUMBER_PATTERN = re.compile(r"(\d{1,6})(?=\D|$)")  # matches "411" in "411pp"
+_PAGE_NUMBER_PATTERN = re.compile(r"(\d{1,6})(?=\D|$)")
 _SERIES_PATTERN = re.compile(r"\((.*?)(?:,\s*|\s+)#(\d+)\)")
 _SERIES_FALLBACK_PATTERN = re.compile(r"^(.*?)(?:,)?\s*Vol\.\s*(\d+)\b")
 
@@ -209,15 +209,30 @@ class _TitleParser(_Parser):
         return link.get_text(strip=True) or ""
 
 
-# --- Registry -----------------------------------------------------------------
+def _parse_row(row: Tag) -> dict[str, Any]:
+    """Helper function which parses row into attribute dictionary.
 
-# TODO: add helper function which compiles values into model dict?
-_PARSERS: dict[str, type[_Parser]] = {
-    "authorName": _AuthorParser,
-    "dateRead": _DateParser,
-    "numberOfPages": _PageNumberParser,
-    "userRating": _RatingParser,
-    "userReview": _ReviewParser,
-    "title": _TitleParser,
-    "series": _SeriesParser,
-}
+    Args:
+        row: The row which contains the data.
+
+    Returns:
+        Dictionary mapping attribute name to value.
+    """
+
+    parsers: dict[str, type[_Parser]] = {
+        "authorName": _AuthorParser,
+        "dateRead": _DateParser,
+        "numberOfPages": _PageNumberParser,
+        "userRating": _RatingParser,
+        "userReview": _ReviewParser,
+        "title": _TitleParser,
+        "series": _SeriesParser,
+    }
+
+    attributes: dict[str, Any] = {}
+
+    for attribute, parser in parsers.items():
+        value = parser.parse(row)
+        attributes[attribute] = value
+
+    return attributes

@@ -3,7 +3,6 @@
 import concurrent.futures
 import re
 from os import cpu_count
-from typing import Any
 
 import httpx
 from bs4 import BeautifulSoup
@@ -12,7 +11,7 @@ from pydantic import ValidationError
 
 from pyreads._models import Book, Library
 from pyreads._parser import (
-    _PARSERS,
+    _parse_row,
 )
 
 # --------------------
@@ -57,10 +56,7 @@ def _parse_goodreads_html(html: str) -> list[Book]:
 
     for tr in review_trs:
         assert isinstance(tr, Tag)
-        attributes: dict[str, Any] = {}
-        for attribute, parser in _PARSERS.items():
-            value = parser.parse(tr)
-            attributes[attribute] = value
+        attributes = _parse_row(tr)
 
         try:
             book = Book(**attributes)

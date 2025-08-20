@@ -8,10 +8,10 @@ from bs4 import BeautifulSoup, Tag
 
 from pyreads._models import Series
 from pyreads._parser import (
-    _PARSERS,
     _AuthorParser,
     _DateParser,
     _PageNumberParser,
+    _parse_row,
     _RatingParser,
     _ReviewParser,
     _SeriesParser,
@@ -217,23 +217,8 @@ def test_series_parser_missing_title_cell() -> None:
 # --- Parsers Registry ---------------------------------------------------------
 
 
-def test_parsers_registry_completeness() -> None:
-    expected = {
-        "authorName": _AuthorParser,
-        "dateRead": _DateParser,
-        "numberOfPages": _PageNumberParser,
-        "userRating": _RatingParser,
-        "userReview": _ReviewParser,
-        "title": _TitleParser,
-        "series": _SeriesParser,
-    }
-    assert _PARSERS == expected
-
-
 def test_all_parsers_work_with_sample(sample_row: Tag) -> None:
-    results: dict[str, object] = {
-        field: parser.parse(sample_row) for field, parser in _PARSERS.items()
-    }
+    results = _parse_row(sample_row)
     assert results["authorName"] == "Moore, Alan"
     assert results["title"] == "Watchmen"
     assert results["numberOfPages"] == 416
@@ -241,22 +226,3 @@ def test_all_parsers_work_with_sample(sample_row: Tag) -> None:
     assert isinstance(results["userReview"], str)
     assert isinstance(results["dateRead"], datetime)
     assert results["series"] is None
-
-
-# --- Integration --------------------------------------------------------------
-
-
-def test_example_input_file_exists(input_html: str) -> None:
-    assert "Watchmen" in input_html  # sanity check
-
-
-def test_integration_parsers_on_input(input_html: str) -> None:
-    soup = BeautifulSoup(input_html, "html.parser")
-    row = soup.find("tr")
-    assert isinstance(row, Tag)
-    assert row is not None
-
-    for field, parser in _PARSERS.items():
-        result = parser.parse(row)
-        if field != "series":  # Watchmen isn’t a series
-            assert result is not None

@@ -42,7 +42,7 @@ def input_html() -> str:
     return html_path.read_text(encoding="utf-8")
 
 
-# --- AuthorParser -------------------------------------------------------------
+# --- AuthorParser Tests ------------------------------------------------------
 
 
 def test_author_parser_success(sample_row: Tag) -> None:
@@ -62,7 +62,7 @@ def test_author_parser_missing_link() -> None:
     assert _AuthorParser.parse(row) is None
 
 
-# --- TitleParser --------------------------------------------------------------
+# --- TitleParser Tests -------------------------------------------------------
 
 
 def test_title_parser_success(sample_row: Tag) -> None:
@@ -82,7 +82,7 @@ def test_title_parser_missing_link() -> None:
     assert _TitleParser.parse(row) == ""
 
 
-# --- PageNumberParser ---------------------------------------------------------
+# --- PageNumberParser Tests --------------------------------------------------
 
 
 def test_page_number_parser_success(sample_row: Tag) -> None:
@@ -101,7 +101,7 @@ def test_page_number_parser_missing_value() -> None:
     assert _PageNumberParser.parse(row) is None
 
 
-# --- RatingParser -------------------------------------------------------------
+# --- RatingParser Tests ------------------------------------------------------
 
 
 def test_rating_parser_success(sample_row: Tag) -> None:
@@ -122,7 +122,7 @@ def test_rating_parser_no_stars() -> None:
     assert _RatingParser.parse(row) == 0
 
 
-# --- ReviewParser -------------------------------------------------------------
+# --- ReviewParser Tests ------------------------------------------------------
 
 
 def test_review_parser_success(sample_row: Tag) -> None:
@@ -136,7 +136,7 @@ def test_review_parser_missing_span() -> None:
     assert _ReviewParser.parse(row) is None
 
 
-# --- DateParser ---------------------------------------------------------------
+# --- DateParser Tests --------------------------------------------------------
 
 
 def test_date_parser_success(sample_row: Tag) -> None:
@@ -165,7 +165,7 @@ def test_date_parser_invalid_format() -> None:
     assert _DateParser.parse(row) is None
 
 
-# --- SeriesParser -------------------------------------------------------------
+# --- SeriesParser Tests ------------------------------------------------------
 
 
 def test_series_parser_none_in_sample(sample_row: Tag) -> None:
@@ -214,7 +214,7 @@ def test_series_parser_missing_title_cell() -> None:
     assert _SeriesParser.parse(row) is None
 
 
-# --- Parsers Registry ---------------------------------------------------------
+# --- Integration Tests -------------------------------------------------------
 
 
 def test_all_parsers_work_with_sample(sample_row: Tag) -> None:

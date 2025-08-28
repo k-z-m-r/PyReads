@@ -5,18 +5,9 @@ from os import cpu_count
 
 import httpx
 
+from ._html import _fetch_books_page, _parse_books_from_html
 from ._http import _fetch_html, _format_goodreads_url
-from ._parser import _parse_books_from_html
-from .models import Book, Library
-
-
-def _fetch_books_page(client: httpx.Client, user_id: int, page: int) -> list[Book]:
-    """
-    Internal: Fetches a single Goodreads page and parses books from HTML.
-    """
-    url = _format_goodreads_url(user_id, page)
-    html = _fetch_html(client, url)
-    return _parse_books_from_html(html)
+from .models import Library
 
 
 # --------------------

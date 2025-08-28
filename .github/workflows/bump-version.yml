@@ -1,0 +1,33 @@
+name: bump-version
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  bump-version:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install uv
+        run: pip install uv
+      - name: Bump version (minor on dev, major on main)
+        run: |
+          branch=$(echo "${{ github.event.pull_request.base.ref }}")
+          if [ "$branch" = "main" ]; then
+            make major
+          elif [ "$branch" = "dev" ]; then
+            make minor
+          fi
+      - name: Commit and push version bump
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add pyreads/__init__.py
+          git commit -m "Bump version after PR merge"
+          git push

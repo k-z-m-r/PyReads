@@ -7,10 +7,11 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any
 
+from bs4 import BeautifulSoup
 from bs4.element import PageElement, Tag
 from typing_extensions import override
 
-from pyreads._models import Series
+from .models import Book, Series
 
 # --- Constants ----------------------------------------------------------------
 
@@ -236,3 +237,18 @@ def _parse_row(row: Tag) -> dict[str, Any]:
         attributes[attribute] = value
 
     return attributes
+
+
+def _parse_books_from_html(html: str) -> list[Book]:
+    """
+    Parses Goodreads shelf HTML and returns a list of Book objects.
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    review_trs = soup.find_all("tr", id=re.compile(r"^review_"))
+    books = []
+    for tr in review_trs:
+        assert isinstance(tr, Tag)
+        attributes = _parse_row(tr)
+        book = Book(**attributes)
+        books.append(book)
+    return books

@@ -18,16 +18,17 @@ jobs:
         run: pip install uv
       - name: Bump version (minor on dev, major on main)
         run: |
-          branch=$(echo "${{ github.event.pull_request.base.ref }}")
+          branch="${{ github.event.pull_request.base.ref }}"
           if [ "$branch" = "main" ]; then
             make major
           elif [ "$branch" = "dev" ]; then
             make minor
           fi
+
       - name: Commit and push version bump
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
           git add pyreads/__init__.py
-          git commit -m "Bump version after PR merge"
-          git push
+          git commit -m "Bump version after PR merge" || echo "No changes to commit"
+          git push origin HEAD:refs/heads/${{ github.event.pull_request.base.ref }}

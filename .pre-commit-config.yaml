@@ -15,23 +15,34 @@ repos:
       - id: check-toml
       - id: check-yaml
       - id: check-json
-      - id: check-xml
       - id: end-of-file-fixer
       - id: trailing-whitespace
-      - id: mixed-line-ending
-        args: [--fix=lf]
-        files: \.sh$
+
+
   - repo: https://github.com/astral-sh/uv-pre-commit
     rev: 0.7.13
     hooks:
       - id: uv-lock
         files: pyproject.toml
+
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: v0.12.3
     hooks:
       - id: ruff-check
         args: [ --fix ]
       - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: pytest
+        name: check pytest
+        entry: scripts/pytest.sh
+        language: script
+        types: [python]
+        pass_filenames: false
+        always_run: true
+
+
 
 ci:
   autofix_commit_msg: 🎨 [pre-commit.ci] Auto format from pre-commit.com hooks

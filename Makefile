@@ -6,7 +6,7 @@ major:
 	uv run bump pyreads/__init__.py --major
 
 minor:
-	uv run bump pyreads/__init__.py- -minor
+	uv run bump pyreads/__init__.py --minor
 
 patch:
 	uv run bump pyreads/__init__.py --patch

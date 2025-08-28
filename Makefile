@@ -3,13 +3,13 @@
 .PHONY: bump
 
 major:
-	uv run bump pyreads/__init__.py --major
+	uv run bump pyreads/__init__.py --major --reset
 
 minor:
-	uv run bump pyreads/__init__.py --minor
+	uv run bump pyreads/__init__.py --minor --reset
 
 patch:
-	uv run bump pyreads/__init__.py --patch
+	uv run bump pyreads/__init__.py --patch --reset
 
 # Usage:
 #   make major

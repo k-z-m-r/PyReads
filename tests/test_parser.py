@@ -6,7 +6,6 @@ from pathlib import Path
 import pytest
 from bs4 import BeautifulSoup, Tag
 
-from pyreads._models import Series
 from pyreads._parser import (
     _AuthorParser,
     _DateParser,
@@ -17,6 +16,7 @@ from pyreads._parser import (
     _SeriesParser,
     _TitleParser,
 )
+from pyreads.models import Series
 
 # --- Fixtures -----------------------------------------------------------------
 

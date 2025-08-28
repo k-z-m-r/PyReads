@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 from pandas import DataFrame
 
-from pyreads._models import Book, Library, Series
+from pyreads.models import Book, Library, Series
 
 # --- Fixtures -----------------------------------------------------------------
 

@@ -36,8 +36,8 @@ repos:
     hooks:
       - id: pytest
         name: check pytest
-        entry: uv run pytest
-        language: system
+        entry: scripts/pytest.sh
+        language: script
         types: [python]
         pass_filenames: false
         always_run: true

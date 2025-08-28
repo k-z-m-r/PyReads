@@ -7,10 +7,17 @@ dependencies = [
     "pydantic"
 ]
 name = "pyreads"
-version = "0"
 description = "Goodreads webscraper"
 readme = "README.md"
-requires-python = ">3.11"
+requires-python = "==3.13.*"
+dynamic = ["version"]
+
+[tool.setuptools.dynamic]
+version = {attr = "pyreads.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["pyreads*"]
+exclude = ["notebooks*", "pyreads.tests*", "pyreads.tests.test_inputs*"]
 
 [tool.uv]
 default-groups = []
@@ -19,5 +26,6 @@ default-groups = []
 dev = [
   "jupyter",
   "pytest",
-  "coverage"
+  "coverage",
+  "bump"
 ]

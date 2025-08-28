@@ -1,8 +1,12 @@
 name: bump-version
 
+
 on:
   pull_request:
     types: [closed]
+
+permissions:
+  contents: write
 
 jobs:
   bump-version:
@@ -35,9 +39,12 @@ jobs:
           fi
 
       - name: Commit and push version bump
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
           git add pyreads/__init__.py
           git commit -m "Bump version after PR merge" || echo "No changes to commit"
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
           git push origin HEAD:refs/heads/${{ github.event.pull_request.base.ref }}

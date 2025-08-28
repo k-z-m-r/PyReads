@@ -1,0 +1,23 @@
+[project]
+dependencies = [
+    "httpx",
+    "bs4",
+    "lxml",
+    "pandas",
+    "pydantic"
+]
+name = "pyreads"
+version = "0"
+description = "Goodreads webscraper"
+readme = "README.md"
+requires-python = ">3.11"
+
+[tool.uv]
+default-groups = []
+
+[dependency-groups]
+dev = [
+  "jupyter",
+  "pytest",
+  "coverage"
+]

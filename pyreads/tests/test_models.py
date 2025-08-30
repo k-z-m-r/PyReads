@@ -1,6 +1,6 @@
 """Tests for the _models module with Pydantic data models."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
@@ -22,7 +22,7 @@ def example_book(example_series: Series) -> Book:
         title="Example Book",
         authorName="John Doe",
         numberOfPages=300,
-        dateRead=datetime(2025, 8, 20),
+        dateRead=datetime(2025, 8, 20, tzinfo=UTC),
         userRating=5,
         review="Great book!",
         series=example_series,
@@ -35,13 +35,15 @@ def example_book_no_series() -> Book:
         title="Standalone Book",
         authorName="Jane Doe",
         numberOfPages=150,
-        dateRead=datetime(2025, 8, 19),
+        dateRead=datetime(2025, 8, 19, tzinfo=UTC),
         userRating=4,
     )
 
 
 @pytest.fixture
-def example_library(example_book: Book, example_book_no_series: Book) -> Library:
+def example_library(
+    example_book: Book, example_book_no_series: Book
+) -> Library:
     return Library(owner=1, books=[example_book, example_book_no_series])
 
 
@@ -69,7 +71,8 @@ def test_book_full_title_without_series(example_book_no_series: Book) -> None:
 
 
 def test_library_dataframe(
-    example_library: Library, example_book: Book, example_book_no_series: Book
+    example_library: Library,
+    example_book: Book,
 ) -> None:
     df: DataFrame = example_library.dataframe
 
@@ -81,7 +84,13 @@ def test_library_dataframe(
 
     # Check that first row matches first book data
     first_row: dict[str, Any] = df.iloc[0].to_dict()
-    for field in ["title", "authorName", "numberOfPages", "userRating", "review"]:
+    for field in [
+        "title",
+        "authorName",
+        "numberOfPages",
+        "userRating",
+        "review",
+    ]:
         assert first_row[field] == getattr(example_book, field)
 
     # Check that series is represented as dict in dataframe

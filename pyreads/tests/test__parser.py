@@ -55,8 +55,12 @@ def test_author_parser_missing_cell() -> None:
 
 
 def test_author_parser_missing_link() -> None:
+    tag = (
+        '<tr><td class="field author">'
+        '<div class="value">No Link</div></td></tr>'
+    )
     row: Tag = BeautifulSoup(
-        '<tr><td class="field author"><div class="value">No Link</div></td></tr>',
+        tag,
         "html.parser",
     ).find("tr")  # type: ignore
     assert _AuthorParser.parse(row) is None
@@ -75,8 +79,11 @@ def test_title_parser_missing_cell() -> None:
 
 
 def test_title_parser_missing_link() -> None:
+    tag = (
+        '<tr><td class="field title"><div class="value">No Link</div></td></tr>'
+    )
     row: Tag = BeautifulSoup(
-        '<tr><td class="field title"><div class="value">No Link</div></td></tr>',
+        tag,
         "html.parser",
     ).find("tr")  # type: ignore
     assert _TitleParser.parse(row) == ""
@@ -115,8 +122,12 @@ def test_rating_parser_missing_cell() -> None:
 
 
 def test_rating_parser_no_stars() -> None:
+    tag = (
+        '<tr><td class="field rating">'
+        '<div class="value">No stars</div></td></tr>'
+    )
     row: Tag = BeautifulSoup(
-        '<tr><td class="field rating"><div class="value">No stars</div></td></tr>',
+        tag,
         "html.parser",
     ).find("tr")  # type: ignore
     assert _RatingParser.parse(row) == 0

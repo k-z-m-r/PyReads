@@ -3,8 +3,8 @@
 import concurrent.futures
 from os import cpu_count
 
-import httpx
 from bs4 import BeautifulSoup
+from httpx import Client
 
 from ._html import _fetch_books_page, _parse_books_from_html
 from ._http import _fetch_html, _format_goodreads_url
@@ -30,7 +30,7 @@ def fetch_goodreads_library(user_id: int) -> Library:
     }
 
     books = []
-    with httpx.Client(headers=headers, follow_redirects=True, timeout=10) as client:
+    with Client(headers=headers, follow_redirects=True, timeout=10) as client:
         # Fetch first page
         first_url = _format_goodreads_url(user_id, 1)
         first_html = _fetch_html(client, first_url)

@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import re
 
-import httpx
 from bs4 import BeautifulSoup
 from bs4.element import Tag
+from httpx import Client
 
 from ._http import _fetch_html, _format_goodreads_url
 from ._parser import _parse_row
@@ -29,9 +29,7 @@ def _parse_books_from_html(html: str) -> list[Book]:
     return books
 
 
-def _fetch_books_page(
-    client: httpx.Client, user_id: int, page: int
-) -> list[Book]:
+def _fetch_books_page(client: Client, user_id: int, page: int) -> list[Book]:
     """
     Fetches a single Goodreads page and parses books from HTML.
     """

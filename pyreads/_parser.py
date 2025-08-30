@@ -4,11 +4,10 @@ from __future__ import annotations
 
 import re
 from abc import ABC, abstractmethod
-from datetime import datetime
-from typing import Any
+from datetime import UTC, datetime
+from typing import Any, override
 
 from bs4.element import PageElement, Tag
-from typing_extensions import override
 
 from .models import Series
 
@@ -123,7 +122,7 @@ class _DateParser(_Parser):
 
         for fmt in _DATE_FORMATS:
             try:
-                return datetime.strptime(date_string, fmt)
+                return datetime.strptime(date_string, fmt).replace(tzinfo=UTC)
             except ValueError:
                 continue
         return None
@@ -198,7 +197,9 @@ class _SeriesParser(_Parser):
             if series_text:
                 m = _SERIES_PATTERN.match(series_text)
                 if m:
-                    return Series(name=m.group(1).strip(), number=int(m.group(2)))
+                    return Series(
+                        name=m.group(1).strip(), number=int(m.group(2))
+                    )
 
         # Fallback: detect "Vol. N" in the raw title text
         raw_title = _safe_find_text(link)

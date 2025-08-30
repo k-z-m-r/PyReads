@@ -31,7 +31,7 @@ def _parse_books_from_html(html: str) -> list[Book]:
 
 def _fetch_books_page(client: httpx.Client, user_id: int, page: int) -> list[Book]:
     """
-    Internal: Fetches a single Goodreads page and parses books from HTML.
+    Fetches a single Goodreads page and parses books from HTML.
     """
     url = _format_goodreads_url(user_id, page)
     html = _fetch_html(client, url)

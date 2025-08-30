@@ -29,7 +29,9 @@ def _parse_books_from_html(html: str) -> list[Book]:
     return books
 
 
-def _fetch_books_page(client: httpx.Client, user_id: int, page: int) -> list[Book]:
+def _fetch_books_page(
+    client: httpx.Client, user_id: int, page: int
+) -> list[Book]:
     """
     Fetches a single Goodreads page and parses books from HTML.
     """

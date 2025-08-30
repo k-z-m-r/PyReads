@@ -23,8 +23,9 @@ def _parse_books_from_html(html: str) -> list[Book]:
     for tr in review_trs:
         assert isinstance(tr, Tag)
         attributes = _parse_row(tr)
-        book = Book(**attributes)
-        books.append(book)
+        if attributes["dateRead"] is not None:
+            book = Book.model_validate(attributes)
+            books.append(book)
     return books
 
 

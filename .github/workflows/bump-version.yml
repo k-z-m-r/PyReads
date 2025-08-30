@@ -33,8 +33,6 @@ jobs:
         run: |
           branch="${{ github.event.pull_request.base.ref }}"
           if [ "$branch" = "main" ]; then
-            make major
-          elif [ "$branch" = "staging" ]; then
             make minor
           elif [ "$branch" = "dev" ]; then
             make patch

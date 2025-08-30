@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import re
 
-import httpx
 from bs4 import BeautifulSoup
 from bs4.element import Tag
+from httpx import Client
 
 from ._http import _fetch_html, _format_goodreads_url
 from ._parser import _parse_row
@@ -23,14 +23,15 @@ def _parse_books_from_html(html: str) -> list[Book]:
     for tr in review_trs:
         assert isinstance(tr, Tag)
         attributes = _parse_row(tr)
-        book = Book(**attributes)
-        books.append(book)
+        if attributes["dateRead"] is not None:
+            book = Book.model_validate(attributes)
+            books.append(book)
     return books
 
 
-def _fetch_books_page(client: httpx.Client, user_id: int, page: int) -> list[Book]:
+def _fetch_books_page(client: Client, user_id: int, page: int) -> list[Book]:
     """
-    Internal: Fetches a single Goodreads page and parses books from HTML.
+    Fetches a single Goodreads page and parses books from HTML.
     """
     url = _format_goodreads_url(user_id, page)
     html = _fetch_html(client, url)

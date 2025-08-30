@@ -4,11 +4,10 @@ from __future__ import annotations
 
 import re
 from abc import ABC, abstractmethod
-from datetime import datetime
-from typing import Any
+from datetime import UTC, datetime
+from typing import Any, override
 
 from bs4.element import PageElement, Tag
-from typing_extensions import override
 
 from .models import Series
 
@@ -35,18 +34,26 @@ _STRING_TO_RATING = {
 def _safe_find_text(
     element: Tag | PageElement | None, strip: bool = True
 ) -> str | None:
-    """Safely extract text from an element, returning None if element is None/empty."""
+    """
+    Safely extract text from an element, returning None if element is
+    None/empty.
+    """
     return element.get_text(strip=strip) or None if element else None
 
 
 def _get_field_cell(row: Tag, field_name: str) -> Tag | None:
-    """Return the <td class='field {field_name}'> cell, or None if not present."""
+    """
+    Return the <td class='field {field_name}'> cell, or None if not present.
+    """
     el = row.find("td", class_=f"field {field_name}")
     return el if isinstance(el, Tag) else None
 
 
 def _extract_number(text: str | None, pattern: re.Pattern[str]) -> int | None:
-    """Extract the first integer using `pattern` from `text`; return None on failure."""
+    """
+    Extract the first integer using `pattern` from `text`; return None on
+    failure.
+    """
     if not text:
         return None
     m = pattern.search(text)
@@ -57,7 +64,9 @@ def _extract_number(text: str | None, pattern: re.Pattern[str]) -> int | None:
 
 
 class _Parser(ABC):
-    """Abstract base class for all field parsers."""
+    """
+    Abstract base class for all field parsers.
+    """
 
     @staticmethod
     @abstractmethod
@@ -77,7 +86,9 @@ class _Parser(ABC):
 
 
 class _AuthorParser(_Parser):
-    """Extract author name from review row."""
+    """
+    Extract author name from review row.
+    """
 
     @override
     @staticmethod
@@ -90,7 +101,9 @@ class _AuthorParser(_Parser):
 
 
 class _DateParser(_Parser):
-    """Extract and parse date read from review row."""
+    """
+    Extract and parse date read from review row.
+    """
 
     @override
     @staticmethod
@@ -109,14 +122,16 @@ class _DateParser(_Parser):
 
         for fmt in _DATE_FORMATS:
             try:
-                return datetime.strptime(date_string, fmt)
+                return datetime.strptime(date_string, fmt).replace(tzinfo=UTC)
             except ValueError:
                 continue
         return None
 
 
 class _PageNumberParser(_Parser):
-    """Extract number of pages from review row."""
+    """
+    Extract number of pages from review row.
+    """
 
     @override
     @staticmethod
@@ -130,7 +145,9 @@ class _PageNumberParser(_Parser):
 
 
 class _RatingParser(_Parser):
-    """Extract user rating from review row."""
+    """
+    Extract user rating from review row.
+    """
 
     @override
     @staticmethod
@@ -146,7 +163,9 @@ class _RatingParser(_Parser):
 
 
 class _ReviewParser(_Parser):
-    """Extract review text from review row."""
+    """
+    Extract review text from review row.
+    """
 
     @override
     @staticmethod
@@ -156,7 +175,9 @@ class _ReviewParser(_Parser):
 
 
 class _SeriesParser(_Parser):
-    """Extract series information from review row."""
+    """
+    Extract series information from review row.
+    """
 
     @override
     @staticmethod
@@ -176,7 +197,9 @@ class _SeriesParser(_Parser):
             if series_text:
                 m = _SERIES_PATTERN.match(series_text)
                 if m:
-                    return Series(name=m.group(1).strip(), number=int(m.group(2)))
+                    return Series(
+                        name=m.group(1).strip(), number=int(m.group(2))
+                    )
 
         # Fallback: detect "Vol. N" in the raw title text
         raw_title = _safe_find_text(link)
@@ -189,7 +212,9 @@ class _SeriesParser(_Parser):
 
 
 class _TitleParser(_Parser):
-    """Extract book title from review row."""
+    """
+    Extract book title from review row.
+    """
 
     @override
     @staticmethod
@@ -210,7 +235,8 @@ class _TitleParser(_Parser):
 
 
 def _parse_row(row: Tag) -> dict[str, Any]:
-    """Helper function which parses row into attribute dictionary.
+    """
+    Helper function which parses row into attribute dictionary.
 
     Args:
         row: The row which contains the data.

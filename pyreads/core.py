@@ -3,17 +3,15 @@
 import concurrent.futures
 from os import cpu_count
 
-import httpx
+from bs4 import BeautifulSoup
+from httpx import Client
 
 from ._html import _fetch_books_page, _parse_books_from_html
 from ._http import _fetch_html, _format_goodreads_url
 from .models import Library
 
 
-# --------------------
-# Public API
-# --------------------
-def get_library(user_id: int) -> Library:
+def fetch_goodreads_library(user_id: int) -> Library:
     """
     Fetches the complete Goodreads library for a user.
 
@@ -32,18 +30,19 @@ def get_library(user_id: int) -> Library:
     }
 
     books = []
-    with httpx.Client(headers=headers, follow_redirects=True, timeout=10) as client:
+    with Client(headers=headers, follow_redirects=True, timeout=10) as client:
         # Fetch first page
         first_url = _format_goodreads_url(user_id, 1)
         first_html = _fetch_html(client, first_url)
         books += _parse_books_from_html(first_html)
 
-        # Determine total number of pages
-        import bs4
-
-        soup = bs4.BeautifulSoup(first_html, "html.parser")
+        soup = BeautifulSoup(first_html, "html.parser")
         pagination_div = soup.find("div", id="reviewPagination")
-        page_links = pagination_div.find_all("a") if pagination_div else []
+        page_links = (
+            pagination_div.find_all("a")
+            if pagination_div and hasattr(pagination_div, "find_all")
+            else []
+        )
         page_numbers = [int(a.text) for a in page_links if a.text.isdigit()]
         total_pages = max(page_numbers) if page_numbers else 1
 

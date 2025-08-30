@@ -4,6 +4,7 @@ import concurrent.futures
 from os import cpu_count
 
 import httpx
+from bs4 import BeautifulSoup
 
 from ._html import _fetch_books_page, _parse_books_from_html
 from ._http import _fetch_html, _format_goodreads_url
@@ -35,10 +36,7 @@ def fetch_goodreads_library(user_id: int) -> Library:
         first_html = _fetch_html(client, first_url)
         books += _parse_books_from_html(first_html)
 
-        # Determine total number of pages
-        import bs4
-
-        soup = bs4.BeautifulSoup(first_html, "html.parser")
+        soup = BeautifulSoup(first_html, "html.parser")
         pagination_div = soup.find("div", id="reviewPagination")
         page_links = (
             pagination_div.find_all("a")

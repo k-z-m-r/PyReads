@@ -10,10 +10,7 @@ from ._http import _fetch_html, _format_goodreads_url
 from .models import Library
 
 
-# --------------------
-# Public API
-# --------------------
-def get_library(user_id: int) -> Library:
+def fetch_goodreads_library(user_id: int) -> Library:
     """
     Fetches the complete Goodreads library for a user.
 
@@ -43,7 +40,11 @@ def get_library(user_id: int) -> Library:
 
         soup = bs4.BeautifulSoup(first_html, "html.parser")
         pagination_div = soup.find("div", id="reviewPagination")
-        page_links = pagination_div.find_all("a") if pagination_div else []
+        page_links = (
+            pagination_div.find_all("a")
+            if pagination_div and hasattr(pagination_div, "find_all")
+            else []
+        )
         page_numbers = [int(a.text) for a in page_links if a.text.isdigit()]
         total_pages = max(page_numbers) if page_numbers else 1
 

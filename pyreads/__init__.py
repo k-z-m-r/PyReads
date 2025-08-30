@@ -2,6 +2,6 @@
 
 from .core import fetch_goodreads_library
 
-__version__ = "0.2.4"
+__version__ = "0.2.5"
 __author__ = "Jeremy Kazimer"
 __all__ = ["fetch_goodreads_library"]

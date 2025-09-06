@@ -24,6 +24,6 @@
     "--show-column-numbers",
     "--strict"
   ],
-  "cSpell.words": ["pyreads"],
+  "cSpell.words": ["goodreads", "pyreads"],
   "ty.disableLanguageServices": true
 }

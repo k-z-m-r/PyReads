@@ -8,25 +8,22 @@
     "editor.formatOnSaveMode": "file",
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
-        "source.fixAll": "explicit",
-        "source.organizeImports": "explicit"
+      "source.fixAll": "explicit",
+      "source.organizeImports": "explicit"
     },
     "editor.defaultFormatter": "charliermarsh.ruff",
-    "editor.rulers": [
-        80
-    ]
+    "editor.rulers": [80]
   },
   "rewrap.autoWrap.enabled": true,
   "files.associations": {
-      "*.ipynb": "python"
-    },
+    "*.ipynb": "python"
+  },
   "mypy-type-checker.args": [
-        "--ignore-missing-imports",
-        "--follow-imports=silent",
-        "--show-column-numbers",
-        "--strict"
-    ],
-    "cSpell.words": [
-      "pyreads"
-    ]
+    "--ignore-missing-imports",
+    "--follow-imports=silent",
+    "--show-column-numbers",
+    "--strict"
+  ],
+  "cSpell.words": ["pyreads"],
+  "ty.disableLanguageServices": true
 }

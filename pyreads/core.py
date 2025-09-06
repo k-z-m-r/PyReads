@@ -5,6 +5,7 @@ from os import cpu_count
 
 from bs4 import BeautifulSoup
 from httpx import Client
+from tqdm import tqdm
 
 from ._html import _fetch_books_page, _parse_books_from_html
 from ._http import _fetch_html, _format_goodreads_url
@@ -62,7 +63,11 @@ def fetch_goodreads_library(
                 executor.submit(_fetch_books_page, client, user_id, page)
                 for page in range(2, total_pages + 1)
             ]
-            for future in concurrent.futures.as_completed(futures):
+            for future in tqdm(
+                concurrent.futures.as_completed(futures),
+                total=len(futures),
+                desc="Fetching pages",
+            ):
                 books += future.result()
 
     return Library(userId=user_id, books=books)

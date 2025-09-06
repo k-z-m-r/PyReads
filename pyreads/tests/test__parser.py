@@ -200,7 +200,7 @@ def test_series_parser_dark_grey_text() -> None:
     result: Series | None = _SeriesParser.parse(row)
     assert result is not None
     assert result.name == "Series Name"
-    assert result.number == 1
+    assert result.entry == "1"
 
 
 def test_series_parser_vol_pattern() -> None:
@@ -217,7 +217,7 @@ def test_series_parser_vol_pattern() -> None:
     result: Series | None = _SeriesParser.parse(row)
     assert result is not None
     assert result.name == "Series Name"
-    assert result.number == 2
+    assert result.entry == "2"
 
 
 def test_series_parser_missing_title_cell() -> None:

@@ -9,11 +9,15 @@ from pydantic import BaseModel, Field
 
 
 class Series(BaseModel):
-    name: str
-    number: int
+    name: str = Field(title="Name", description="The name of the series.")
+    entry: str = Field(
+        title="Series Entry",
+        description="The entry of the book in that series.",
+        examples=["1", "2", "2.5"],
+    )
 
     def __str__(self) -> str:
-        return f"({self.name}, #{self.number})"
+        return f"({self.name}, #{self.entry})"
 
 
 class Book(BaseModel):
@@ -61,8 +65,12 @@ class Book(BaseModel):
 
 
 class Library(BaseModel):
-    owner: int
-    books: list[Book]
+    userId: int = Field(
+        title="User ID", description="The Goodreads user ID for the library."
+    )
+    books: list[Book] = Field(
+        title="Books", description="The collection of books."
+    )
 
     @cached_property
     def dataframe(self) -> DataFrame:

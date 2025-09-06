@@ -12,7 +12,7 @@ from pyreads.models import Book, Library, Series
 
 @pytest.fixture
 def example_series() -> Series:
-    return Series(name="The Example Series", number=2)
+    return Series(name="The Example Series", entry="2")
 
 
 @pytest.fixture
@@ -51,7 +51,7 @@ def example_book_no_series() -> Book:
 def example_library(
     example_book: Book, example_book_no_series: Book
 ) -> Library:
-    return Library(owner=1, books=[example_book, example_book_no_series])
+    return Library(userId=1, books=[example_book, example_book_no_series])
 
 
 # --- Series Tests -------------------------------------------------------------
@@ -106,6 +106,6 @@ def test_library_dataframe(
             # Series should be preserved as dict-like object in DataFrame
             assert isinstance(first_row[col_title], dict)
             assert first_row[col_title]["name"] == expected_value.name
-            assert first_row[col_title]["number"] == expected_value.number
+            assert first_row[col_title]["entry"] == expected_value.entry
         else:
             assert first_row[col_title] == expected_value

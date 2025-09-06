@@ -198,7 +198,7 @@ class _SeriesParser(_Parser):
                 m = _SERIES_PATTERN.match(series_text)
                 if m:
                     return Series(
-                        name=m.group(1).strip(), number=int(m.group(2))
+                        name=m.group(1).strip(), entry=str(m.group(2))
                     )
 
         # Fallback: detect "Vol. N" in the raw title text
@@ -206,7 +206,7 @@ class _SeriesParser(_Parser):
         if raw_title:
             m2 = _SERIES_FALLBACK_PATTERN.match(raw_title)
             if m2:
-                return Series(name=m2.group(1).strip(), number=int(m2.group(2)))
+                return Series(name=m2.group(1).strip(), entry=str(m2.group(2)))
 
         return None
 

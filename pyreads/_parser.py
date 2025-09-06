@@ -9,8 +9,6 @@ from typing import Any, override
 
 from bs4.element import PageElement, Tag
 
-from .models import Series
-
 # --- Constants ----------------------------------------------------------------
 
 _REVIEW_ID_PATTERN = re.compile(r"^freeTextContainerreview")
@@ -181,7 +179,7 @@ class _SeriesParser(_Parser):
 
     @override
     @staticmethod
-    def parse(row: Tag) -> Series | None:
+    def parse(row: Tag) -> list[str] | None:
         cell = _get_field_cell(row, "title")
         if not cell:
             return None
@@ -197,16 +195,14 @@ class _SeriesParser(_Parser):
             if series_text:
                 m = _SERIES_PATTERN.match(series_text)
                 if m:
-                    return Series(
-                        name=m.group(1).strip(), entry=str(m.group(2))
-                    )
+                    return [m.group(1).strip(), str(m.group(2))]
 
         # Fallback: detect "Vol. N" in the raw title text
         raw_title = _safe_find_text(link)
         if raw_title:
             m2 = _SERIES_FALLBACK_PATTERN.match(raw_title)
             if m2:
-                return Series(name=m2.group(1).strip(), entry=str(m2.group(2)))
+                return [m2.group(1).strip(), str(m2.group(2))]
 
         return None
 
@@ -259,6 +255,9 @@ def _parse_row(row: Tag) -> dict[str, Any]:
 
     for attribute, parser in parsers.items():
         value = parser.parse(row)
+        if attribute == "series" and value:
+            attributes["seriesName"] = value[0]
+            attributes["seriesEntry"] = value[1]
         attributes[attribute] = value
 
     return attributes

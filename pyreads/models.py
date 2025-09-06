@@ -2,22 +2,10 @@
 
 from datetime import date
 from functools import cached_property
-from typing import Literal
+from typing import Literal, Self
 
 from pandas import DataFrame
-from pydantic import BaseModel, Field
-
-
-class Series(BaseModel):
-    name: str = Field(title="Name", description="The name of the series.")
-    entry: str = Field(
-        title="Series Entry",
-        description="The entry of the book in that series.",
-        examples=["1", "2", "2.5"],
-    )
-
-    def __str__(self) -> str:
-        return f"({self.name}, #{self.entry})"
+from pydantic import BaseModel, Field, model_validator
 
 
 class Book(BaseModel):
@@ -43,13 +31,30 @@ class Book(BaseModel):
         description="The optional review of the book from the user.",
         default=None,
     )
-    series: Series | None = Field(
-        title="Series",
-        description="The optional series for which the book belongs to.",
+    seriesName: str | None = Field(
+        title="Series Name",
+        description="The name of the series the book belongs to (if any).",
         default=None,
     )
+    seriesEntry: str | None = Field(
+        title="Series Entry",
+        description="The book's position in the series.",
+        default=None,
+        examples=["1", "1.5"],
+    )
 
-    @property
+    @model_validator(mode="after")
+    def validate_series(self) -> Self:
+        """
+        Validates that if a seriesName exists, a seriesEntry must also exist.
+        """
+
+        if bool(self.seriesName) != bool(self.seriesEntry):
+            err = "seriesName and seriesEntry must be provided together."
+            raise ValueError(err)
+        return self
+
+    @cached_property
     def full_title(self) -> str:
         """
         Formats title, series, and authorName to a complete title.
@@ -58,8 +63,8 @@ class Book(BaseModel):
             (title) (series) by (authorName)
         """
         title = f"{self.title} "
-        if self.series:
-            title += f"{self.series} "
+        if self.seriesName:
+            title += f"({self.seriesName}, #{self.seriesEntry}) "
         title += f"by {self.authorName}"
         return title
 

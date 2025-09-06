@@ -5,18 +5,13 @@ from typing import Any
 
 import pytest
 
-from pyreads.models import Book, Library, Series
+from pyreads.models import Book, Library
 
 # --- Fixtures -----------------------------------------------------------------
 
 
 @pytest.fixture
-def example_series() -> Series:
-    return Series(name="The Example Series", entry="2")
-
-
-@pytest.fixture
-def example_book(example_series: Series) -> Book:
+def example_book() -> Book:
     return Book(
         title="Example Book",
         authorName="John Doe",
@@ -28,7 +23,8 @@ def example_book(example_series: Series) -> Book:
         ),
         userRating=5,
         userReview="Great book!",
-        series=example_series,
+        seriesName="The Example Series",
+        seriesEntry="2",
     )
 
 
@@ -52,13 +48,6 @@ def example_library(
     example_book: Book, example_book_no_series: Book
 ) -> Library:
     return Library(userId=1, books=[example_book, example_book_no_series])
-
-
-# --- Series Tests -------------------------------------------------------------
-
-
-def test_series_str(example_series: Series) -> None:
-    assert str(example_series) == "(The Example Series, #2)"
 
 
 # --- Book Tests ---------------------------------------------------------------
@@ -97,15 +86,10 @@ def test_library_dataframe(
         "Date Read": "dateRead",
         "User Rating": "userRating",
         "User Review": "userReview",
-        "Series": "series",
+        "Series Name": "seriesName",
+        "Series Entry": "seriesEntry",
     }
 
     for col_title, attr in field_map.items():
         expected_value = getattr(example_book, attr)
-        if attr == "series" and expected_value is not None:
-            # Series should be preserved as dict-like object in DataFrame
-            assert isinstance(first_row[col_title], dict)
-            assert first_row[col_title]["name"] == expected_value.name
-            assert first_row[col_title]["entry"] == expected_value.entry
-        else:
-            assert first_row[col_title] == expected_value
+        assert first_row[col_title] == expected_value

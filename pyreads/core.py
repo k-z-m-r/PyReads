@@ -24,6 +24,7 @@ def fetch_goodreads_library(
     user_id: int,
     headers: dict[str, str] = _DEFAULT_HEADERS,
     workers: int | None = None,
+    show_progress: bool = True,
 ) -> Library:
     """
     Fetches the complete Goodreads library for a user.
@@ -32,6 +33,7 @@ def fetch_goodreads_library(
         user_id: Goodreads user ID.
         headers: Optional request headers.
         workers: Number of workers to use to complete task.
+        show_progress: Whether or not to show TQDM progress.
 
     Returns:
         Library: A Library object containing all books read by the user.
@@ -69,6 +71,7 @@ def fetch_goodreads_library(
                 leave=True,
                 total=len(futures),
                 desc="Fetching pages",
+                disable=not show_progress,
             ):
                 books += future.result()
 

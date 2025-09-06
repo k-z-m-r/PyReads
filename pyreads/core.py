@@ -65,6 +65,8 @@ def fetch_goodreads_library(
             ]
             for future in tqdm(
                 concurrent.futures.as_completed(futures),
+                position=0,
+                leave=True,
                 total=len(futures),
                 desc="Fetching pages",
             ):

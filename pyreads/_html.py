@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import re
+from warnings import warn
 
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 from httpx import Client
+from pydantic import ValidationError
 
 from ._http import _fetch_html, _format_goodreads_url
 from ._parser import _parse_row
@@ -23,8 +25,11 @@ def _parse_books_from_html(html: str) -> list[Book]:
     for tr in review_trs:
         assert isinstance(tr, Tag)
         attributes = _parse_row(tr)
-        if attributes["dateRead"] is not None:
+        try:
             book = Book.model_validate(attributes)
+        except ValidationError as exc:
+            warn(str(exc), stacklevel=1)
+        else:
             books.append(book)
     return books
 

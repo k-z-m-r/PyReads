@@ -25,7 +25,7 @@ class Book(BaseModel):
     authorName: str = Field(
         title="Author Name", description="The name of the author."
     )
-    numberOfPages: int | None = Field(
+    numberOfPages: int = Field(
         title="Number of Pages",
         description="The total number of pages in the book.",
         ge=1,

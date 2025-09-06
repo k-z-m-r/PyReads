@@ -1,10 +1,9 @@
 """Tests for the _models module with Pydantic data models."""
 
-from datetime import UTC, datetime
+from datetime import date
 from typing import Any
 
 import pytest
-from pandas import DataFrame
 
 from pyreads.models import Book, Library, Series
 
@@ -22,9 +21,13 @@ def example_book(example_series: Series) -> Book:
         title="Example Book",
         authorName="John Doe",
         numberOfPages=300,
-        dateRead=datetime(2025, 8, 20, tzinfo=UTC),
+        dateRead=date(
+            2025,
+            8,
+            20,
+        ),
         userRating=5,
-        review="Great book!",
+        userReview="Great book!",
         series=example_series,
     )
 
@@ -35,7 +38,11 @@ def example_book_no_series() -> Book:
         title="Standalone Book",
         authorName="Jane Doe",
         numberOfPages=150,
-        dateRead=datetime(2025, 8, 19, tzinfo=UTC),
+        dateRead=date(
+            2025,
+            8,
+            19,
+        ),
         userRating=4,
     )
 
@@ -74,27 +81,31 @@ def test_library_dataframe(
     example_library: Library,
     example_book: Book,
 ) -> None:
-    df: DataFrame = example_library.dataframe
-
-    # Check type
-    assert isinstance(df, DataFrame)
+    df = example_library.dataframe
 
     # Check correct number of rows
     assert len(df) == 2
 
     # Check that first row matches first book data
     first_row: dict[str, Any] = df.iloc[0].to_dict()
-    for field in [
-        "title",
-        "authorName",
-        "numberOfPages",
-        "userRating",
-        "review",
-    ]:
-        assert first_row[field] == getattr(example_book, field)
 
-    # Check that series is represented as dict in dataframe
-    assert example_book.series
-    assert isinstance(first_row["series"], dict)
-    assert first_row["series"]["name"] == example_book.series.name
-    assert first_row["series"]["number"] == example_book.series.number
+    # Map titles back to model attributes
+    field_map = {
+        "Title": "title",
+        "Author Name": "authorName",
+        "Number of Pages": "numberOfPages",
+        "Date Read": "dateRead",
+        "User Rating": "userRating",
+        "User Review": "userReview",
+        "Series": "series",
+    }
+
+    for col_title, attr in field_map.items():
+        expected_value = getattr(example_book, attr)
+        if attr == "series" and expected_value is not None:
+            # Series should be preserved as dict-like object in DataFrame
+            assert isinstance(first_row[col_title], dict)
+            assert first_row[col_title]["name"] == expected_value.name
+            assert first_row[col_title]["number"] == expected_value.number
+        else:
+            assert first_row[col_title] == expected_value

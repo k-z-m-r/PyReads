@@ -196,10 +196,10 @@ def test_series_parser_dark_grey_text() -> None:
     </tr>
     """
     row: Tag = BeautifulSoup(html, "html.parser").find("tr")  # type: ignore
-    result: list[str] | None = _SeriesParser.parse(row)
+    result = _SeriesParser.parse(row)
     assert result is not None
-    assert result[0] == "Series Name"
-    assert result[1] == "1"
+    assert result.name == "Series Name"
+    assert result.entry == "1"
 
 
 def test_series_parser_vol_pattern() -> None:
@@ -213,10 +213,10 @@ def test_series_parser_vol_pattern() -> None:
     </tr>
     """
     row: Tag = BeautifulSoup(html, "html.parser").find("tr")  # type: ignore
-    result: list[str] | None = _SeriesParser.parse(row)
+    result = _SeriesParser.parse(row)
     assert result is not None
-    assert result[0] == "Series Name"
-    assert result[1] == "2"
+    assert result.name == "Series Name"
+    assert result.entry == "2"
 
 
 def test_series_parser_missing_title_cell() -> None:

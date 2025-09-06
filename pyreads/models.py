@@ -8,6 +8,18 @@ from pandas import DataFrame
 from pydantic import BaseModel, Field, model_validator
 
 
+class _Series(BaseModel):
+    name: str = Field(title="Name", description="The name of the series.")
+    entry: str = Field(
+        title="Series Entry",
+        description="The entry of the book in that series.",
+        examples=["1", "2", "2.5"],
+    )
+
+    def __str__(self) -> str:
+        return f"({self.name}, #{self.entry})"
+
+
 class Book(BaseModel):
     title: str = Field(title="Title", description="The title of the book.")
     authorName: str = Field(

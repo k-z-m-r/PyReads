@@ -207,7 +207,10 @@ def test_series_parser_vol_pattern() -> None:
     <tr>
         <td class="field title">
             <div class="value">
-                <a href="/book/show/123">Series Name, Vol. 2</a>
+                <a href="/book/show/123">
+                    Title
+                    <span class="darkGreyText">Series Name, Vol. 2</span>
+                </a>
             </div>
         </td>
     </tr>

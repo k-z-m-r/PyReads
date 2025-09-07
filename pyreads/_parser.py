@@ -17,6 +17,7 @@ _REVIEW_ID_PATTERN = re.compile(r"^freeTextContainerreview")
 _PAGE_NUMBER_PATTERN = re.compile(r"(\d{1,6})(?=\D|$)")
 _SERIES_PATTERN = re.compile(r"\((.*?)(?:,\s*|\s+)#(\d+)\)")
 _SERIES_FALLBACK_PATTERN = re.compile(r"^(.*?)(?:,)?\s*Vol\.\s*(\d+)\b")
+_SERIES_PATTERNS = [_SERIES_PATTERN, _SERIES_FALLBACK_PATTERN]
 
 _DATE_FORMATS = ("%b %d, %Y", "%b %Y")
 
@@ -192,22 +193,19 @@ class _SeriesParser(_Parser):
 
         # Prefer explicit series span inside the title link
         series_span = link.find("span", class_="darkGreyText")
-        if isinstance(series_span, Tag):
-            series_text = _safe_find_text(series_span, strip=True)
-            if series_text:
-                m = _SERIES_PATTERN.match(series_text)
-                if m:
+        series_text = (
+            _safe_find_text(series_span, strip=True) if series_span else None
+        )
+
+        # Check patterns against the series span text
+        if series_text:
+            for pattern in _SERIES_PATTERNS:
+                match = pattern.match(series_text)
+                if match:
                     return _Series(
-                        name=m.group(1).strip(), entry=str(m.group(2))
+                        name=match.group(1).strip(),
+                        entry=match.group(2),
                     )
-
-        # Fallback: detect "Vol. N" in the raw title text
-        raw_title = _safe_find_text(link)
-        if raw_title:
-            m2 = _SERIES_FALLBACK_PATTERN.match(raw_title)
-            if m2:
-                return _Series(name=m2.group(1).strip(), entry=str(m2.group(2)))
-
         return None
 
 

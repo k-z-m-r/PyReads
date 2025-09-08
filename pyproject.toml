@@ -1,21 +1,21 @@
 [project]
 dependencies = [
-    "httpx",
-    "bs4",
-    "lxml",
-    "pandas",
-    "pydantic",
-    "tqdm"
+    "httpx==0.28.1",
+    "bs4==0.0.2",
+    "lxml==6.0.0",
+    "pandas==2.3.1",
+    "pydantic==2.11.7",
+    "tqdm==4.67.1"
 ]
 name = "pyreads"
 description = "PyReads package to process Goodreads site data."
 authors = [
     { name = "Jeremy Kazimer", email = "jeremykazimer@gmail.com" }
 ]
-license = "Apache Software License"
+license = "Apache-2.0"
 keywords = ["goodreads", "webscraper", "books"]
 readme = "README.md"
-requires-python = "==3.13.*"
+requires-python = ">=3.10"
 dynamic = ["version"]
 
 [tool.setuptools.dynamic]

@@ -3,13 +3,14 @@
 from datetime import datetime
 from pathlib import Path
 
-import pytest
 from bs4 import BeautifulSoup, Tag
+from pytest import fixture, warns
 
 from pyreads._parser import (
     _AuthorParser,
     _DateParser,
     _PageNumberParser,
+    _parse_books_from_html,
     _parse_row,
     _RatingParser,
     _ReviewParser,
@@ -20,7 +21,7 @@ from pyreads._parser import (
 # --- Fixtures -----------------------------------------------------------------
 
 
-@pytest.fixture
+@fixture
 def sample_row() -> Tag:
     """Create a BeautifulSoup Tag from the Watchmen sample row HTML."""
     html_path = Path(__file__).parent / "test_inputs" / "input.html"
@@ -34,7 +35,7 @@ def sample_row() -> Tag:
     return row
 
 
-@pytest.fixture
+@fixture
 def input_html() -> str:
     """Return the raw HTML from test_inputs/input.html."""
     html_path = Path(__file__).parent / "test_inputs" / "input.html"
@@ -85,6 +86,20 @@ def test_title_parser_missing_link() -> None:
         tag,
         "html.parser",
     ).find("tr")  # type: ignore
+    assert _TitleParser.parse(row) == ""
+
+
+def test_title_parser_empty_link() -> None:
+    html = """
+    <tr>
+        <td class="field title">
+            <div class="value">
+                <a href=""></a>
+            </div>
+        </td>
+    </tr>
+    """
+    row: Tag = BeautifulSoup(html, "html.parser").find("tr")  # type: ignore
     assert _TitleParser.parse(row) == ""
 
 
@@ -175,6 +190,20 @@ def test_date_parser_invalid_format() -> None:
     assert _DateParser.parse(row) is None
 
 
+def test_date_parser_no_date() -> None:
+    html = """
+    <tr>
+        <td class="field date_read">
+            <div class="value">
+                <span title=""></span>
+            </div>
+        </td>
+    </tr>
+    """
+    row: Tag = BeautifulSoup(html, "html.parser").find("tr")  # type: ignore
+    assert _DateParser.parse(row) is None
+
+
 # --- SeriesParser Tests ------------------------------------------------------
 
 
@@ -227,6 +256,22 @@ def test_series_parser_missing_title_cell() -> None:
     assert _SeriesParser.parse(row) is None
 
 
+def test_series_parser_no_link() -> None:
+    html = """
+    <tr>
+        <td class="field title">
+            <div class="value">
+                <span class="darkGreyText">
+                    (Series Name, #1)
+                </span>
+            </div>
+        </td>
+    </tr>
+    """
+    row: Tag = BeautifulSoup(html, "html.parser").find("tr")  # type: ignore
+    assert _SeriesParser.parse(row) is None
+
+
 # --- Integration Tests -------------------------------------------------------
 
 
@@ -239,3 +284,67 @@ def test_all_parsers_work_with_sample(sample_row: Tag) -> None:
     assert isinstance(results["userReview"], str)
     assert isinstance(results["dateRead"], datetime)
     assert results["series"] is None
+
+
+def test_parse_row_series_attribute() -> None:
+    html = """
+    <tr>
+        <td class="field title">
+            <div class="value">
+                <a href="/book/show/123">
+                    Title
+                    <span class="darkGreyText">
+                        (Series Name, #1)
+                    </span>
+                </a>
+            </div>
+        </td>
+    </tr>
+    """
+    row: Tag = BeautifulSoup(html, "html.parser").find("tr")  # type: ignore
+    result = _parse_row(row)
+    assert result["seriesName"] == "Series Name"
+    assert result["seriesEntry"] == "1"
+
+
+# --- _parse_books_from_html Tests --------------------------------------------
+
+
+def test_parse_books_from_html(input_html: str) -> None:
+    books = _parse_books_from_html(input_html)
+    assert len(books) == 1
+
+    # Accessing attributes of the Book object directly
+    book = books[0]
+    assert book.title == "Watchmen"
+    assert book.seriesName is None
+    assert book.seriesEntry is None
+
+
+def test_parse_books_from_html_missing_title() -> None:
+    html = """
+    <html>
+        <body>
+            <table>
+                <tr id="review_81002456" class="bookalike review">
+                    <td class="field author">
+                        <div class="value">
+                            <a href="/author/show/3961.Alan_Moore">
+                                Moore, Alan
+                            </a>
+                        </div>
+                    </td>
+                    <td class="field avg_rating">
+                        <div class="value">4.39</div>
+                    </td>
+                    <td class="field num_pages">
+                        <div class="value">416</div>
+                    </td>
+                </tr>
+            </table>
+        </body>
+    </html>
+    """
+    with warns(UserWarning):
+        books = _parse_books_from_html(html)
+        assert len(books) == 0

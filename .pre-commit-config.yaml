@@ -41,6 +41,14 @@ repos:
         types: [python]
         pass_filenames: false
         always_run: true
+      - id: build
+        name: check package build
+        entry: uv build
+        language: system
+        pass_filenames: false
+        always_run: true
+
+
 
 
 

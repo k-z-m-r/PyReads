@@ -16,9 +16,6 @@ class _Series(BaseModel):
         examples=["1", "2", "2.5"],
     )
 
-    def __str__(self) -> str:
-        return f"({self.name}, #{self.entry})"
-
 
 class Book(BaseModel):
     title: str = Field(title="Title", description="The title of the book.")

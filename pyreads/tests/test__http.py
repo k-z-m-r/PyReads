@@ -2,8 +2,8 @@
 
 from collections.abc import Generator
 
-import pytest
-from httpx import Client
+from httpx import Client, HTTPStatusError
+from pytest import fixture, raises
 
 from pyreads._http import _fetch_books_page, _fetch_html, _format_goodreads_url
 from pyreads.models import Book
@@ -11,7 +11,7 @@ from pyreads.models import Book
 # --- Fixtures -----------------------------------------------------------------
 
 
-@pytest.fixture
+@fixture
 def mock_client() -> Generator[Client, None, None]:
     """Create a mock HTTPX client."""
     with Client() as client:
@@ -39,6 +39,14 @@ def test_fetch_html_success(mock_client: Client) -> None:
     url = "https://example.com"
     resp = _fetch_html(mock_client, url)
     assert resp
+
+
+def test_fetch_html_failure(mock_client: Client) -> None:
+    """Test successful HTML fetch."""
+    url = "https://example.com/bad"
+
+    with raises(HTTPStatusError, match=f"404 Error: {url}"):
+        _fetch_html(mock_client, url)
 
 
 # --- _fetch_books_page Tests -------------------------------------------------

@@ -14,6 +14,7 @@ authors = [
 ]
 license = "Apache-2.0"
 keywords = ["goodreads", "webscraper", "books"]
+urls = { source = "https://github.com/jeremy-kazimer/PyReads" }
 readme = "README.md"
 requires-python = ">=3.11"
 dynamic = ["version"]
@@ -33,7 +34,6 @@ dev = [
   "jupyter",
   "pytest",
   "coverage",
-  "bump"
 ]
 
 [tool.ruff]

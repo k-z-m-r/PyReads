@@ -1,31 +1,30 @@
 """Tests for the _models module with Pydantic data models."""
 
-from datetime import UTC, datetime
+from datetime import date
 from typing import Any
 
 import pytest
-from pandas import DataFrame
 
-from pyreads.models import Book, Library, Series
+from pyreads.models import Book, Library
 
 # --- Fixtures -----------------------------------------------------------------
 
 
 @pytest.fixture
-def example_series() -> Series:
-    return Series(name="The Example Series", number=2)
-
-
-@pytest.fixture
-def example_book(example_series: Series) -> Book:
+def example_book() -> Book:
     return Book(
         title="Example Book",
         authorName="John Doe",
         numberOfPages=300,
-        dateRead=datetime(2025, 8, 20, tzinfo=UTC),
+        dateRead=date(
+            2025,
+            8,
+            20,
+        ),
         userRating=5,
-        review="Great book!",
-        series=example_series,
+        userReview="Great book!",
+        seriesName="The Example Series",
+        seriesEntry="2",
     )
 
 
@@ -35,7 +34,11 @@ def example_book_no_series() -> Book:
         title="Standalone Book",
         authorName="Jane Doe",
         numberOfPages=150,
-        dateRead=datetime(2025, 8, 19, tzinfo=UTC),
+        dateRead=date(
+            2025,
+            8,
+            19,
+        ),
         userRating=4,
     )
 
@@ -44,14 +47,7 @@ def example_book_no_series() -> Book:
 def example_library(
     example_book: Book, example_book_no_series: Book
 ) -> Library:
-    return Library(owner=1, books=[example_book, example_book_no_series])
-
-
-# --- Series Tests -------------------------------------------------------------
-
-
-def test_series_str(example_series: Series) -> None:
-    assert str(example_series) == "(The Example Series, #2)"
+    return Library(userId=1, books=[example_book, example_book_no_series])
 
 
 # --- Book Tests ---------------------------------------------------------------
@@ -74,27 +70,26 @@ def test_library_dataframe(
     example_library: Library,
     example_book: Book,
 ) -> None:
-    df: DataFrame = example_library.dataframe
-
-    # Check type
-    assert isinstance(df, DataFrame)
+    df = example_library.dataframe
 
     # Check correct number of rows
     assert len(df) == 2
 
     # Check that first row matches first book data
     first_row: dict[str, Any] = df.iloc[0].to_dict()
-    for field in [
-        "title",
-        "authorName",
-        "numberOfPages",
-        "userRating",
-        "review",
-    ]:
-        assert first_row[field] == getattr(example_book, field)
 
-    # Check that series is represented as dict in dataframe
-    assert example_book.series
-    assert isinstance(first_row["series"], dict)
-    assert first_row["series"]["name"] == example_book.series.name
-    assert first_row["series"]["number"] == example_book.series.number
+    # Map titles back to model attributes
+    field_map = {
+        "Title": "title",
+        "Author Name": "authorName",
+        "Number of Pages": "numberOfPages",
+        "Date Read": "dateRead",
+        "User Rating": "userRating",
+        "User Review": "userReview",
+        "Series Name": "seriesName",
+        "Series Entry": "seriesEntry",
+    }
+
+    for col_title, attr in field_map.items():
+        expected_value = getattr(example_book, attr)
+        assert first_row[col_title] == expected_value

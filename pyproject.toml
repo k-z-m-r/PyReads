@@ -4,7 +4,8 @@ dependencies = [
     "bs4",
     "lxml",
     "pandas",
-    "pydantic"
+    "pydantic",
+    "tqdm"
 ]
 name = "pyreads"
 description = "Goodreads webscraper"

@@ -16,7 +16,6 @@ from pyreads._parser import (
     _SeriesParser,
     _TitleParser,
 )
-from pyreads.models import Series
 
 # --- Fixtures -----------------------------------------------------------------
 
@@ -197,10 +196,10 @@ def test_series_parser_dark_grey_text() -> None:
     </tr>
     """
     row: Tag = BeautifulSoup(html, "html.parser").find("tr")  # type: ignore
-    result: Series | None = _SeriesParser.parse(row)
+    result = _SeriesParser.parse(row)
     assert result is not None
     assert result.name == "Series Name"
-    assert result.number == 1
+    assert result.entry == "1"
 
 
 def test_series_parser_vol_pattern() -> None:
@@ -208,16 +207,19 @@ def test_series_parser_vol_pattern() -> None:
     <tr>
         <td class="field title">
             <div class="value">
-                <a href="/book/show/123">Series Name, Vol. 2</a>
+                <a href="/book/show/123">
+                    Title
+                    <span class="darkGreyText">Series Name, Vol. 2</span>
+                </a>
             </div>
         </td>
     </tr>
     """
     row: Tag = BeautifulSoup(html, "html.parser").find("tr")  # type: ignore
-    result: Series | None = _SeriesParser.parse(row)
+    result = _SeriesParser.parse(row)
     assert result is not None
     assert result.name == "Series Name"
-    assert result.number == 2
+    assert result.entry == "2"
 
 
 def test_series_parser_missing_title_cell() -> None:

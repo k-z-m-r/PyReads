@@ -6,10 +6,13 @@ import re
 from abc import ABC, abstractmethod
 from datetime import UTC, datetime
 from typing import Any, override
+from warnings import warn
 
+from bs4 import BeautifulSoup
 from bs4.element import PageElement, Tag
+from pydantic import ValidationError
 
-from .models import Series
+from .models import Book, _Series
 
 # --- Constants ----------------------------------------------------------------
 
@@ -17,6 +20,7 @@ _REVIEW_ID_PATTERN = re.compile(r"^freeTextContainerreview")
 _PAGE_NUMBER_PATTERN = re.compile(r"(\d{1,6})(?=\D|$)")
 _SERIES_PATTERN = re.compile(r"\((.*?)(?:,\s*|\s+)#(\d+)\)")
 _SERIES_FALLBACK_PATTERN = re.compile(r"^(.*?)(?:,)?\s*Vol\.\s*(\d+)\b")
+_SERIES_PATTERNS = [_SERIES_PATTERN, _SERIES_FALLBACK_PATTERN]
 
 _DATE_FORMATS = ("%b %d, %Y", "%b %Y")
 
@@ -181,7 +185,7 @@ class _SeriesParser(_Parser):
 
     @override
     @staticmethod
-    def parse(row: Tag) -> Series | None:
+    def parse(row: Tag) -> _Series | None:
         cell = _get_field_cell(row, "title")
         if not cell:
             return None
@@ -192,22 +196,19 @@ class _SeriesParser(_Parser):
 
         # Prefer explicit series span inside the title link
         series_span = link.find("span", class_="darkGreyText")
-        if isinstance(series_span, Tag):
-            series_text = _safe_find_text(series_span, strip=True)
-            if series_text:
-                m = _SERIES_PATTERN.match(series_text)
-                if m:
-                    return Series(
-                        name=m.group(1).strip(), number=int(m.group(2))
+        series_text = (
+            _safe_find_text(series_span, strip=True) if series_span else None
+        )
+
+        # Check patterns against the series span text
+        if series_text:
+            for pattern in _SERIES_PATTERNS:
+                match = pattern.match(series_text)
+                if match:
+                    return _Series(
+                        name=match.group(1).strip(),
+                        entry=match.group(2),
                     )
-
-        # Fallback: detect "Vol. N" in the raw title text
-        raw_title = _safe_find_text(link)
-        if raw_title:
-            m2 = _SERIES_FALLBACK_PATTERN.match(raw_title)
-            if m2:
-                return Series(name=m2.group(1).strip(), number=int(m2.group(2)))
-
         return None
 
 
@@ -259,6 +260,29 @@ def _parse_row(row: Tag) -> dict[str, Any]:
 
     for attribute, parser in parsers.items():
         value = parser.parse(row)
+        if attribute == "series" and value:
+            assert isinstance(value, _Series)
+            attributes["seriesName"] = value.name
+            attributes["seriesEntry"] = value.entry
         attributes[attribute] = value
 
     return attributes
+
+
+def _parse_books_from_html(html: str) -> list[Book]:
+    """
+    Parses Goodreads shelf HTML and returns a list of Book objects.
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    review_trs = soup.find_all("tr", id=re.compile(r"^review_"))
+    books = []
+    for tr in review_trs:
+        assert isinstance(tr, Tag)
+        attributes = _parse_row(tr)
+        try:
+            book = Book.model_validate(attributes)
+        except ValidationError as exc:
+            warn(str(exc), stacklevel=1)
+        else:
+            books.append(book)
+    return books

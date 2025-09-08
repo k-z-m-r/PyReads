@@ -3,14 +3,14 @@
 from datetime import date
 from typing import Any
 
-import pytest
+from pytest import fixture, raises
 
 from pyreads.models import Book, Library
 
 # --- Fixtures -----------------------------------------------------------------
 
 
-@pytest.fixture
+@fixture
 def example_book() -> Book:
     return Book(
         title="Example Book",
@@ -28,7 +28,7 @@ def example_book() -> Book:
     )
 
 
-@pytest.fixture
+@fixture
 def example_book_no_series() -> Book:
     return Book(
         title="Standalone Book",
@@ -43,7 +43,7 @@ def example_book_no_series() -> Book:
     )
 
 
-@pytest.fixture
+@fixture
 def example_library(
     example_book: Book, example_book_no_series: Book
 ) -> Library:
@@ -93,3 +93,41 @@ def test_library_dataframe(
     for col_title, attr in field_map.items():
         expected_value = getattr(example_book, attr)
         assert first_row[col_title] == expected_value
+
+
+# --- Series Name and Entry Validation Tests -----------------------------------
+def test_series_name_and_entry_validation() -> None:
+    """Test validation for seriesName and seriesEntry fields."""
+
+    required_attrs = {
+        "title": "",
+        "authorName": "",
+        "numberOfPages": 1,
+        "dateRead": date(
+            2025,
+            8,
+            20,
+        ),
+        "userRating": 0,
+    }
+    # Case 1: Both seriesName and seriesEntry are provided (valid case)
+    model = Book(**required_attrs, seriesName="Series A", seriesEntry="1")  # type: ignore
+    assert model is not None
+
+    # Case 2: Only seriesName is provided (invalid case)
+    with raises(
+        ValueError,
+        match="seriesName and seriesEntry must be provided together.",
+    ):
+        Book(**required_attrs, seriesName="Series A", seriesEntry=None)  # type: ignore
+
+    # Case 3: Only seriesEntry is provided (invalid case)
+    with raises(
+        ValueError,
+        match="seriesName and seriesEntry must be provided together.",
+    ):
+        Book(**required_attrs, seriesName=None, seriesEntry="1")  # type: ignore
+
+    # Case 4: Neither seriesName nor seriesEntry is provided (valid case)
+    model = Book(**required_attrs, seriesName=None, seriesEntry=None)  # type: ignore
+    assert model is not None

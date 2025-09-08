@@ -1,0 +1,57 @@
+exclude: ^notebooks/
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: forbid-submodules
+      - id: no-commit-to-branch
+      - id: debug-statements
+      - id: check-added-large-files
+      - id: check-case-conflict
+      - id: check-illegal-windows-names
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: check-ast
+      - id: check-toml
+      - id: check-yaml
+      - id: check-json
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.7.13
+    hooks:
+      - id: uv-lock
+        files: pyproject.toml
+
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.12.3
+    hooks:
+      - id: ruff-check
+        args: [ --fix ]
+      - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: pytest
+        name: check pytest
+        entry: scripts/pytest.sh
+        language: script
+        types: [python]
+        pass_filenames: false
+        always_run: true
+      - id: build
+        name: check package build
+        entry: uv build
+        language: system
+        pass_filenames: false
+        always_run: true
+
+
+
+
+
+ci:
+  autofix_commit_msg: 🎨 [pre-commit.ci] Auto format from pre-commit.com hooks
+  autoupdate_commit_msg: ⬆ [pre-commit.ci] pre-commit autoupdate

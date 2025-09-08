@@ -1,0 +1,68 @@
+[project]
+dependencies = [
+    "httpx==0.28.1",
+    "bs4==0.0.2",
+    "lxml==6.0.0",
+    "pandas==2.3.1",
+    "pydantic==2.11.7",
+    "tqdm==4.67.1"
+]
+name = "pyreads"
+description = "PyReads package to process Goodreads site data."
+authors = [
+    { name = "Jeremy Kazimer", email = "jeremykazimer@gmail.com" }
+]
+license = "Apache-2.0"
+keywords = ["goodreads", "webscraper", "books"]
+readme = "README.md"
+requires-python = ">=3.11"
+dynamic = ["version"]
+
+[tool.setuptools.dynamic]
+version = {attr = "pyreads.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["pyreads*"]
+exclude = ["notebooks*", "pyreads.tests*", "pyreads.tests.test_inputs*"]
+
+[tool.uv]
+default-groups = []
+
+[dependency-groups]
+dev = [
+  "jupyter",
+  "pytest",
+  "coverage",
+  "bump"
+]
+
+[tool.ruff]
+line-length = 80
+
+[tool.ruff.lint]
+select = [
+    "E","W","F","I",
+    "UP","B",
+    "SIM","C4",
+    "ARG","ARG001",
+    "RET","TRY",
+    "DTZ",
+    "S",
+    "ANN",
+    "RUF",
+]
+ignore = [
+    "B008",
+    "B904",
+    "ANN401",
+    "S101",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+docstring-code-format = true

@@ -1,4 +1,4 @@
-"""Tests for the _models module with Pydantic data models."""
+"""Tests for the models module with Pydantic data models."""
 
 from datetime import date
 from typing import Any

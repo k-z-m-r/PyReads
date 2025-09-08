@@ -6,10 +6,13 @@ import re
 from abc import ABC, abstractmethod
 from datetime import UTC, datetime
 from typing import Any, override
+from warnings import warn
 
+from bs4 import BeautifulSoup
 from bs4.element import PageElement, Tag
+from pydantic import ValidationError
 
-from .models import _Series
+from .models import Book, _Series
 
 # --- Constants ----------------------------------------------------------------
 
@@ -264,3 +267,22 @@ def _parse_row(row: Tag) -> dict[str, Any]:
         attributes[attribute] = value
 
     return attributes
+
+
+def _parse_books_from_html(html: str) -> list[Book]:
+    """
+    Parses Goodreads shelf HTML and returns a list of Book objects.
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    review_trs = soup.find_all("tr", id=re.compile(r"^review_"))
+    books = []
+    for tr in review_trs:
+        assert isinstance(tr, Tag)
+        attributes = _parse_row(tr)
+        try:
+            book = Book.model_validate(attributes)
+        except ValidationError as exc:
+            warn(str(exc), stacklevel=1)
+        else:
+            books.append(book)
+    return books

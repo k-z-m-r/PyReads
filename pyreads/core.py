@@ -7,8 +7,8 @@ from bs4 import BeautifulSoup
 from httpx import Client
 from tqdm import tqdm
 
-from ._html import _fetch_books_page, _parse_books_from_html
-from ._http import _fetch_html, _format_goodreads_url
+from ._http import _fetch_books_page, _fetch_html, _format_goodreads_url
+from ._parser import _parse_books_from_html
 from .models import Library
 
 _DEFAULT_HEADERS = {
@@ -20,7 +20,7 @@ _DEFAULT_HEADERS = {
 }
 
 
-def fetch_goodreads_library(
+def fetch_library(
     user_id: int,
     headers: dict[str, str] = _DEFAULT_HEADERS,
     workers: int | None = None,

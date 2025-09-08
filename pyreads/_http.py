@@ -2,6 +2,9 @@
 
 from httpx import Client, HTTPStatusError
 
+from ._parser import _parse_books_from_html
+from .models import Book
+
 
 def _format_goodreads_url(user_id: int, page: int = 1) -> str:
     """
@@ -22,3 +25,12 @@ def _fetch_html(client: Client, url: str) -> str:
     raise HTTPStatusError(
         message=err, request=response.request, response=response
     )
+
+
+def _fetch_books_page(client: Client, user_id: int, page: int) -> list[Book]:
+    """
+    Fetches a single Goodreads page and parses books from HTML.
+    """
+    url = _format_goodreads_url(user_id, page)
+    html = _fetch_html(client, url)
+    return _parse_books_from_html(html)

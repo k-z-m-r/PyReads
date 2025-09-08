@@ -8,7 +8,12 @@ dependencies = [
     "tqdm"
 ]
 name = "pyreads"
-description = "Goodreads webscraper"
+description = "PyReads package to process Goodreads site data."
+authors = [
+    { name = "Jeremy Kazimer", email = "jeremykazimer@gmail.com" }
+]
+license = "Apache Software License"
+keywords = ["goodreads", "webscraper", "books"]
 readme = "README.md"
 requires-python = "==3.13.*"
 dynamic = ["version"]

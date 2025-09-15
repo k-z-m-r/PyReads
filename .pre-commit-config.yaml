@@ -4,7 +4,6 @@ repos:
     rev: v5.0.0
     hooks:
       - id: forbid-submodules
-      - id: no-commit-to-branch
       - id: debug-statements
       - id: check-added-large-files
       - id: check-case-conflict
@@ -38,13 +37,12 @@ repos:
         name: check pytest
         entry: scripts/pytest.sh
         language: script
-        types: [python]
         pass_filenames: false
         always_run: true
       - id: build
         name: check package build
-        entry: uv build
-        language: system
+        entry: scripts/build.sh
+        language: script
         pass_filenames: false
         always_run: true
 

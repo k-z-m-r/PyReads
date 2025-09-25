@@ -40,7 +40,7 @@ def fetch_library(
     """
 
     books = []
-    with Client(headers=headers, follow_redirects=True, timeout=10) as client:
+    with Client(headers=headers, follow_redirects=True, timeout=60) as client:
         # Fetch first page
         first_url = _format_goodreads_url(user_id, 1)
         first_html = _fetch_html(client, first_url)

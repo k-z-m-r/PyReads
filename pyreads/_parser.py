@@ -219,20 +219,20 @@ class _TitleParser(_Parser):
 
     @override
     @staticmethod
-    def parse(row: Tag) -> str:
+    def parse(row: Tag) -> str | None:
         cell = _get_field_cell(row, "title")
         if not cell:
-            return ""
+            return None
 
         link = cell.find("a")
         if not isinstance(link, Tag):
-            return ""
+            return None
 
         # Prefer the direct text node (avoids series span text)
         if link.contents and isinstance(link.contents[0], str):
             return link.contents[0].strip()
 
-        return link.get_text(strip=True) or ""
+        return link.get_text(strip=True) or None
 
 
 def _parse_row(row: Tag) -> dict[str, Any]:
@@ -282,7 +282,7 @@ def _parse_books_from_html(html: str) -> list[Book]:
         try:
             book = Book.model_validate(attributes)
         except ValidationError as exc:
-            warn(str(exc), stacklevel=1)
+            warn(str(exc), stacklevel=2)
         else:
             books.append(book)
     return books

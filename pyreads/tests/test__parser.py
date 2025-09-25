@@ -4,7 +4,7 @@ from datetime import datetime
 from pathlib import Path
 
 from bs4 import BeautifulSoup, Tag
-from pytest import fixture
+from pytest import fixture, warns
 
 from pyreads._parser import (
     _AuthorParser,
@@ -75,7 +75,7 @@ def test_title_parser_success(sample_row: Tag) -> None:
 
 def test_title_parser_missing_cell() -> None:
     row: Tag = BeautifulSoup("<tr></tr>", "html.parser").find("tr")  # type: ignore
-    assert _TitleParser.parse(row) == ""
+    assert _TitleParser.parse(row) is None
 
 
 def test_title_parser_missing_link() -> None:
@@ -86,7 +86,7 @@ def test_title_parser_missing_link() -> None:
         tag,
         "html.parser",
     ).find("tr")  # type: ignore
-    assert _TitleParser.parse(row) == ""
+    assert _TitleParser.parse(row) is None
 
 
 def test_title_parser_empty_link() -> None:
@@ -100,7 +100,7 @@ def test_title_parser_empty_link() -> None:
     </tr>
     """
     row: Tag = BeautifulSoup(html, "html.parser").find("tr")  # type: ignore
-    assert _TitleParser.parse(row) == ""
+    assert _TitleParser.parse(row) is None
 
 
 # --- PageNumberParser Tests --------------------------------------------------
@@ -319,3 +319,32 @@ def test_parse_books_from_html(input_html: str) -> None:
     assert book.title == "Watchmen"
     assert book.seriesName is None
     assert book.seriesEntry is None
+
+
+def test_parse_books_from_html_missing_title() -> None:
+    html = """
+    <html>
+        <body>
+            <table>
+                <tr id="review_81002456" class="bookalike review">
+                    <td class="field author">
+                        <div class="value">
+                            <a href="/author/show/3961.Alan_Moore">
+                                Moore, Alan
+                            </a>
+                        </div>
+                    </td>
+                    <td class="field avg_rating">
+                        <div class="value">4.39</div>
+                    </td>
+                    <td class="field num_pages">
+                        <div class="value">416</div>
+                    </td>
+                </tr>
+            </table>
+        </body>
+    </html>
+    """
+    with warns(UserWarning):
+        books = _parse_books_from_html(html)
+        assert len(books) == 0

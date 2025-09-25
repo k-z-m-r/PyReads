@@ -25,7 +25,6 @@ class Book(BaseModel):
     numberOfPages: int | None = Field(
         title="Number of Pages",
         description="The total number of pages in the book.",
-        ge=1,
         default=None,
     )
     dateRead: date | None = Field(

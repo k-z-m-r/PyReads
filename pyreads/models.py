@@ -22,14 +22,15 @@ class Book(BaseModel):
     authorName: str = Field(
         title="Author Name", description="The name of the author."
     )
-    numberOfPages: int = Field(
+    numberOfPages: int | None = Field(
         title="Number of Pages",
         description="The total number of pages in the book.",
-        ge=1,
+        default=None,
     )
-    dateRead: date = Field(
+    dateRead: date | None = Field(
         title="Date Read",
         description="The date that the user finished the book.",
+        default=None,
     )
     userRating: Literal[0, 1, 2, 3, 4, 5] = Field(
         title="User Rating",

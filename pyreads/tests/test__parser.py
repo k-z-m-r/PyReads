@@ -75,7 +75,7 @@ def test_title_parser_success(sample_row: Tag) -> None:
 
 def test_title_parser_missing_cell() -> None:
     row: Tag = BeautifulSoup("<tr></tr>", "html.parser").find("tr")  # type: ignore
-    assert _TitleParser.parse(row) == ""
+    assert _TitleParser.parse(row) is None
 
 
 def test_title_parser_missing_link() -> None:
@@ -86,7 +86,7 @@ def test_title_parser_missing_link() -> None:
         tag,
         "html.parser",
     ).find("tr")  # type: ignore
-    assert _TitleParser.parse(row) == ""
+    assert _TitleParser.parse(row) is None
 
 
 def test_title_parser_empty_link() -> None:
@@ -100,7 +100,7 @@ def test_title_parser_empty_link() -> None:
     </tr>
     """
     row: Tag = BeautifulSoup(html, "html.parser").find("tr")  # type: ignore
-    assert _TitleParser.parse(row) == ""
+    assert _TitleParser.parse(row) is None
 
 
 # --- PageNumberParser Tests --------------------------------------------------

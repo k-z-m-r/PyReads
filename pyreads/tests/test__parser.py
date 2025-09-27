@@ -132,7 +132,7 @@ def test_rating_parser_success(sample_row: Tag) -> None:
 
 def test_rating_parser_missing_cell() -> None:
     row: Tag = BeautifulSoup("<tr></tr>", "html.parser").find("tr")  # type: ignore
-    assert _RatingParser.parse(row) == 0
+    assert _RatingParser.parse(row) is None
 
 
 def test_rating_parser_no_stars() -> None:
@@ -144,7 +144,7 @@ def test_rating_parser_no_stars() -> None:
         tag,
         "html.parser",
     ).find("tr")  # type: ignore
-    assert _RatingParser.parse(row) == 0
+    assert _RatingParser.parse(row) is None
 
 
 # --- ReviewParser Tests ------------------------------------------------------

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from abc import ABC, abstractmethod
-from datetime import UTC, date, datetime
+from datetime import UTC, datetime
 from typing import Any, override
 from warnings import warn
 
@@ -101,42 +101,42 @@ class _Parser(ABC):
 
     @staticmethod
     @abstractmethod
-    def _extract_element(row: Tag) -> Any | None:
+    def _extract_element(row: Tag) -> Tag | None:
         """Extract the relevant HTML element(s) from the row.
 
         Args:
             row: The BS4 Tag to extract elements from.
 
         Returns:
-            The extracted element(s) or None if not found.
+            The extracted element(s) as Tag or None if not found.
         """
         raise NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def _extract_data(element: Any) -> Any | None:
+    def _extract_data(element: Tag) -> str | None:
         """Extract raw data from the element(s).
 
         Args:
-            element: The element(s) to extract data from.
+            element: The element to extract data from (always a Tag).
 
         Returns:
-            The extracted raw data or None if not found.
+            The extracted raw data as string or None if not found.
         """
         raise NotImplementedError
 
     @staticmethod
-    @abstractmethod
-    def _transform_data(data: Any) -> Any | None:
+    def _transform_data(data: str) -> Any:
         """Transform the raw data into the final form.
 
         Args:
-            data: The raw data to transform.
+            data: The raw data to transform (always a string).
 
         Returns:
-            The transformed data or None if transformation failed.
+            The transformed data in the appropriate type.
         """
-        raise NotImplementedError
+
+        return data
 
 
 # --- Concrete parsers ---------------------------------------------------------
@@ -154,13 +154,9 @@ class _AuthorParser(_Parser):
 
     @staticmethod
     @override
-    def _extract_data(cell: Tag) -> PageElement | None:
-        return cell.find("a")
-
-    @staticmethod
-    @override
-    def _transform_data(link: Tag) -> str | None:
-        return _safe_find_text(link)
+    def _extract_data(element: Tag) -> str | None:
+        link = element.find("a")
+        return _safe_find_text(link) if link else None
 
 
 class _DateParser(_Parser):
@@ -175,22 +171,19 @@ class _DateParser(_Parser):
 
     @staticmethod
     @override
-    def _extract_data(cell: Tag) -> str | None:
-        span = cell.find("span", class_="date_read_value") or cell.find(
+    def _extract_data(element: Tag) -> str | None:
+        span = element.find("span", class_="date_read_value") or element.find(
             "span", title=True
         )
         return _safe_find_text(span)
 
     @staticmethod
     @override
-    def _transform_data(date_string: str) -> date | None:
+    def _transform_data(data: str) -> Any:
         for fmt in _DATE_FORMATS:
             try:
-                return (
-                    datetime.strptime(date_string, fmt)
-                    .replace(tzinfo=UTC)
-                    .date()
-                )
+                dt = datetime.strptime(data, fmt).replace(tzinfo=UTC)
+                return dt.date()
             except ValueError:
                 continue
         return None
@@ -208,14 +201,14 @@ class _PageNumberParser(_Parser):
 
     @staticmethod
     @override
-    def _extract_data(cell: Tag) -> str | None:
-        nobr = cell.find("nobr")
+    def _extract_data(element: Tag) -> str | None:
+        nobr = element.find("nobr")
         return _safe_find_text(nobr, strip=True)
 
     @staticmethod
     @override
-    def _transform_data(text: str) -> int | None:
-        return _extract_number(text, _PAGE_NUMBER_PATTERN)
+    def _transform_data(data: str) -> Any:
+        return _extract_number(data, _PAGE_NUMBER_PATTERN)
 
 
 class _RatingParser(_Parser):
@@ -230,22 +223,15 @@ class _RatingParser(_Parser):
 
     @staticmethod
     @override
-    def _extract_data(cell: Tag) -> str | None:
-        span = cell.find("span", class_="staticStars")
+    def _extract_data(element: Tag) -> str | None:
+        span = element.find("span", class_="staticStars")
         title = span.get("title") if isinstance(span, Tag) else None
         return title if isinstance(title, str) else None
 
     @staticmethod
     @override
-    def _transform_data(title: str) -> int:
-        return int(_STRING_TO_RATING.get(title.lower(), 0))
-
-    @staticmethod
-    @override
-    def parse(row: Tag) -> int:
-        # Override parse method to return 0 as default instead of None
-        result = super(_RatingParser, _RatingParser).parse(row)
-        return 0 if result is None else result
+    def _transform_data(data: str) -> Any:
+        return int(_STRING_TO_RATING.get(data.lower(), 0))
 
 
 class _ReviewParser(_Parser):
@@ -255,18 +241,14 @@ class _ReviewParser(_Parser):
 
     @staticmethod
     @override
-    def _extract_element(row: Tag) -> PageElement | None:
-        return row.find("span", {"id": _REVIEW_ID_PATTERN})
+    def _extract_element(row: Tag) -> Tag | None:
+        element = row.find("span", {"id": _REVIEW_ID_PATTERN})
+        return element if isinstance(element, Tag) else None
 
     @staticmethod
     @override
-    def _extract_data(span: Tag) -> str | None:
-        return _safe_find_text(span)
-
-    @staticmethod
-    @override
-    def _transform_data(text: str) -> str:
-        return text
+    def _extract_data(element: Tag) -> str | None:
+        return _safe_find_text(element)
 
 
 class _SeriesParser(_Parser):
@@ -274,15 +256,9 @@ class _SeriesParser(_Parser):
     Extract series information from review row.
     """
 
-    # This parser needs a more complex structure, so we'll use a custom type
-    # to pass data between methods
-    class _SeriesData:
-        def __init__(self, link: Tag) -> None:
-            self.link = link
-
     @staticmethod
     @override
-    def _extract_element(row: Tag) -> _SeriesParser._SeriesData | None:
+    def _extract_element(row: Tag) -> Tag | None:
         cell = _get_field_cell(row, "title")
         if not cell:
             return None
@@ -291,19 +267,19 @@ class _SeriesParser(_Parser):
         if not isinstance(link, Tag):
             return None
 
-        return _SeriesParser._SeriesData(link)
+        return link
 
     @staticmethod
     @override
-    def _extract_data(data: _SeriesParser._SeriesData) -> str | None:
-        series_span = data.link.find("span", class_="darkGreyText")
+    def _extract_data(element: Tag) -> str | None:
+        series_span = element.find("span", class_="darkGreyText")
         return _safe_find_text(series_span, strip=True)
 
     @staticmethod
     @override
-    def _transform_data(series_text: str) -> _Series | None:
+    def _transform_data(data: str) -> Any:
         for pattern in _SERIES_PATTERNS:
-            if match := pattern.match(series_text):
+            if match := pattern.match(data):
                 return _Series(
                     name=match.group(1).strip(),
                     entry=match.group(2),
@@ -331,16 +307,10 @@ class _TitleParser(_Parser):
 
     @staticmethod
     @override
-    def _extract_data(data: Tag) -> Tag:
-        return data
-
-    @staticmethod
-    @override
-    def _transform_data(link: Tag) -> str | None:
-        if link.contents and isinstance(link.contents[0], str):
-            return link.contents[0].strip()
-
-        return link.get_text(strip=True) or None
+    def _extract_data(element: Tag) -> str | None:
+        if element.contents and isinstance(element.contents[0], str):
+            return element.contents[0].strip()
+        return element.get_text(strip=True) or None
 
 
 def _parse_row(row: Tag) -> dict[str, Any]:

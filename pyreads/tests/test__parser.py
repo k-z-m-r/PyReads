@@ -1,6 +1,6 @@
 """Tests for the _parser module using real Goodreads HTML data."""
 
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 
 from bs4 import BeautifulSoup, Tag
@@ -132,7 +132,7 @@ def test_rating_parser_success(sample_row: Tag) -> None:
 
 def test_rating_parser_missing_cell() -> None:
     row: Tag = BeautifulSoup("<tr></tr>", "html.parser").find("tr")  # type: ignore
-    assert _RatingParser.parse(row) == 0
+    assert _RatingParser.parse(row) is None
 
 
 def test_rating_parser_no_stars() -> None:
@@ -144,7 +144,7 @@ def test_rating_parser_no_stars() -> None:
         tag,
         "html.parser",
     ).find("tr")  # type: ignore
-    assert _RatingParser.parse(row) == 0
+    assert _RatingParser.parse(row) is None
 
 
 # --- ReviewParser Tests ------------------------------------------------------
@@ -228,7 +228,7 @@ def test_series_parser_dark_grey_text() -> None:
     result = _SeriesParser.parse(row)
     assert result is not None
     assert result.name == "Series Name"
-    assert result.entry == "1"
+    assert result.entry == 1
 
 
 def test_series_parser_vol_pattern() -> None:
@@ -248,7 +248,7 @@ def test_series_parser_vol_pattern() -> None:
     result = _SeriesParser.parse(row)
     assert result is not None
     assert result.name == "Series Name"
-    assert result.entry == "2"
+    assert result.entry == 2
 
 
 def test_series_parser_missing_title_cell() -> None:
@@ -282,7 +282,7 @@ def test_all_parsers_work_with_sample(sample_row: Tag) -> None:
     assert results["numberOfPages"] == 416
     assert results["userRating"] == 5
     assert isinstance(results["userReview"], str)
-    assert isinstance(results["dateRead"], datetime)
+    assert isinstance(results["dateRead"], date)
     assert results["series"] is None
 
 
@@ -304,7 +304,7 @@ def test_parse_row_series_attribute() -> None:
     row: Tag = BeautifulSoup(html, "html.parser").find("tr")  # type: ignore
     result = _parse_row(row)
     assert result["seriesName"] == "Series Name"
-    assert result["seriesEntry"] == "1"
+    assert result["seriesEntry"] == 1
 
 
 # --- _parse_books_from_html Tests --------------------------------------------

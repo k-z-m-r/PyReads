@@ -360,7 +360,7 @@ def _parse_books_from_html(html: str) -> list[Book]:
         try:
             book = Book.model_validate(attributes)
         except ValidationError as exc:
-            warn(str(exc), stacklevel=2)
+            warn(str(exc), stacklevel=1)
         else:
             books.append(book)
     return books

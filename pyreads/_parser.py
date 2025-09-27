@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from abc import ABC, abstractmethod
-from datetime import UTC, datetime
+from datetime import date, datetime
 from typing import Any, override
 from warnings import warn
 
@@ -18,9 +18,10 @@ from .models import Book, _Series
 
 _REVIEW_ID_PATTERN = re.compile(r"^freeTextContainerreview")
 _PAGE_NUMBER_PATTERN = re.compile(r"(\d{1,6})(?=\D|$)")
-_SERIES_PATTERN = re.compile(r"\((.*?)(?:,\s*|\s+)#(\d+)\)")
-_SERIES_FALLBACK_PATTERN = re.compile(r"^(.*?)(?:,)?\s*Vol\.\s*(\d+)\b")
-_SERIES_PATTERNS = [_SERIES_PATTERN, _SERIES_FALLBACK_PATTERN]
+_SERIES_PATTERNS = [
+    re.compile(r"\((.*?)(?:,\s*|\s+)#(\d+(?:\.\d+)?)\)"),
+    re.compile(r"^(.*?)(?:,)?\s*Vol\.\s*(\d+(?:\.\d+)?)\b"),
+]
 
 _DATE_FORMATS = ("%b %d, %Y", "%b %Y")
 
@@ -111,7 +112,7 @@ class _DateParser(_Parser):
 
     @override
     @staticmethod
-    def parse(row: Tag) -> datetime | None:
+    def parse(row: Tag) -> date | None:
         cell = _get_field_cell(row, "date_read")
         if not cell:
             return None
@@ -126,7 +127,7 @@ class _DateParser(_Parser):
 
         for fmt in _DATE_FORMATS:
             try:
-                return datetime.strptime(date_string, fmt).replace(tzinfo=UTC)
+                return datetime.strptime(date_string, fmt).date()
             except ValueError:
                 continue
         return None

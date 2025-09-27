@@ -21,6 +21,7 @@ _PAGE_NUMBER_PATTERN = re.compile(r"(\d{1,6})(?=\D|$)")
 _SERIES_PATTERNS = [
     re.compile(r"\((.*?)(?:,\s*|\s+)#(\d+(?:\.\d+)?)\)"),
     re.compile(r"^(.*?)(?:,)?\s*Vol\.\s*(\d+(?:\.\d+)?)\b"),
+    re.compile(r"\((.*?)\s+Book\s+(\d+(?:\.\d+)?)\)"),
 ]
 
 _DATE_FORMATS = ("%b %d, %Y", "%b %Y")
@@ -113,16 +114,14 @@ class _DateParser(_Parser):
     @override
     @staticmethod
     def parse(row: Tag) -> date | None:
-        cell = _get_field_cell(row, "date_read")
-        if not cell:
+        if not (cell := _get_field_cell(row, "date_read")):
             return None
 
         # Prefer explicit "date_read_value"; fall back to any <span title="...">
         span = cell.find("span", class_="date_read_value") or cell.find(
             "span", title=True
         )
-        date_string = _safe_find_text(span)
-        if not date_string:
+        if not (date_string := _safe_find_text(span)):
             return None
 
         for fmt in _DATE_FORMATS:
@@ -195,21 +194,21 @@ class _SeriesParser(_Parser):
         if not isinstance(link, Tag):
             return None
 
-        # Prefer explicit series span inside the title link
+        # Get series text from span
         series_span = link.find("span", class_="darkGreyText")
-        series_text = (
-            _safe_find_text(series_span, strip=True) if series_span else None
-        )
+        series_text = _safe_find_text(series_span, strip=True)
 
-        # Check patterns against the series span text
-        if series_text:
-            for pattern in _SERIES_PATTERNS:
-                match = pattern.match(series_text)
-                if match:
-                    return _Series(
-                        name=match.group(1).strip(),
-                        entry=match.group(2),
-                    )
+        # Return early if no series text
+        if not series_text:
+            return None
+
+        # Try each pattern until we find a match
+        for pattern in _SERIES_PATTERNS:
+            if match := pattern.match(series_text):
+                return _Series(
+                    name=match.group(1).strip(),
+                    entry=match.group(2),
+                )
         return None
 
 
@@ -221,12 +220,10 @@ class _TitleParser(_Parser):
     @override
     @staticmethod
     def parse(row: Tag) -> str | None:
-        cell = _get_field_cell(row, "title")
-        if not cell:
+        if not (cell := _get_field_cell(row, "title")):
             return None
 
-        link = cell.find("a")
-        if not isinstance(link, Tag):
+        if not isinstance(link := cell.find("a"), Tag):
             return None
 
         # Prefer the direct text node (avoids series span text)

@@ -24,7 +24,7 @@ def example_book() -> Book:
         userRating=5,
         userReview="Great book!",
         seriesName="The Example Series",
-        seriesEntry="2",
+        seriesEntry=2,
     )
 
 
@@ -108,7 +108,6 @@ def test_series_name_and_entry_validation() -> None:
             8,
             20,
         ),
-        "userRating": 0,
     }
     # Case 1: Both seriesName and seriesEntry are provided (valid case)
     model = Book(**required_attrs, seriesName="Series A", seriesEntry="1")  # type: ignore

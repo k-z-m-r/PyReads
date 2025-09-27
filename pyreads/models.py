@@ -32,9 +32,10 @@ class Book(BaseModel):
         description="The date that the user finished the book.",
         default=None,
     )
-    userRating: Literal[0, 1, 2, 3, 4, 5] = Field(
+    userRating: Literal[1, 2, 3, 4, 5] | None = Field(
         title="User Rating",
         description="The rating that the user gave the book.",
+        default=None,
     )
     userReview: str | None = Field(
         title="User Review",

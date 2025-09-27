@@ -110,7 +110,7 @@ def test_series_name_and_entry_validation() -> None:
         ),
     }
     # Case 1: Both seriesName and seriesEntry are provided (valid case)
-    model = Book(**required_attrs, seriesName="Series A", seriesEntry="1")  # type: ignore
+    model = Book(**required_attrs, seriesName="Series A", seriesEntry=1)  # type: ignore
     assert model is not None
 
     # Case 2: Only seriesName is provided (invalid case)

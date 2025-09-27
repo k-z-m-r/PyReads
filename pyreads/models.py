@@ -46,11 +46,11 @@ class Book(BaseModel):
         description="The name of the series the book belongs to (if any).",
         default=None,
     )
-    seriesEntry: str | None = Field(
+    seriesEntry: float | None = Field(
         title="Series Entry",
         description="The book's position in the series.",
         default=None,
-        examples=["1", "1.5"],
+        examples=[1, 1.5],
     )
 
     @model_validator(mode="after")
@@ -73,8 +73,13 @@ class Book(BaseModel):
             (title) (series) by (authorName)
         """
         title = f"{self.title} "
-        if self.seriesName:
-            title += f"({self.seriesName}, #{self.seriesEntry}) "
+        if self.seriesName and self.seriesEntry:
+            series_entry = (
+                int(self.seriesEntry)
+                if self.seriesEntry.is_integer()
+                else self.seriesEntry
+            )
+            title += f"({self.seriesName}, #{series_entry}) "
         title += f"by {self.authorName}"
         return title
 

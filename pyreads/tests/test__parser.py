@@ -1,6 +1,6 @@
 """Tests for the _parser module using real Goodreads HTML data."""
 
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 
 from bs4 import BeautifulSoup, Tag
@@ -282,7 +282,7 @@ def test_all_parsers_work_with_sample(sample_row: Tag) -> None:
     assert results["numberOfPages"] == 416
     assert results["userRating"] == 5
     assert isinstance(results["userReview"], str)
-    assert isinstance(results["dateRead"], datetime)
+    assert isinstance(results["dateRead"], date)
     assert results["series"] is None
 
 

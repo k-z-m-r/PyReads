@@ -231,7 +231,8 @@ class _RatingParser(_Parser):
     @staticmethod
     @override
     def _transform_data(data: str) -> Any:
-        return int(_STRING_TO_RATING.get(data.lower(), 0))
+        rating = _STRING_TO_RATING.get(data.lower())
+        return int(rating) if rating is not None else None
 
 
 class _ReviewParser(_Parser):

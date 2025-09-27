@@ -228,7 +228,7 @@ def test_series_parser_dark_grey_text() -> None:
     result = _SeriesParser.parse(row)
     assert result is not None
     assert result.name == "Series Name"
-    assert result.entry == "1"
+    assert result.entry == 1
 
 
 def test_series_parser_vol_pattern() -> None:
@@ -248,7 +248,7 @@ def test_series_parser_vol_pattern() -> None:
     result = _SeriesParser.parse(row)
     assert result is not None
     assert result.name == "Series Name"
-    assert result.entry == "2"
+    assert result.entry == 2
 
 
 def test_series_parser_missing_title_cell() -> None:
@@ -304,7 +304,7 @@ def test_parse_row_series_attribute() -> None:
     row: Tag = BeautifulSoup(html, "html.parser").find("tr")  # type: ignore
     result = _parse_row(row)
     assert result["seriesName"] == "Series Name"
-    assert result["seriesEntry"] == "1"
+    assert result["seriesEntry"] == 1
 
 
 # --- _parse_books_from_html Tests --------------------------------------------

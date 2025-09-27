@@ -10,10 +10,10 @@ from pydantic import BaseModel, Field, model_validator
 
 class _Series(BaseModel):
     name: str = Field(title="Name", description="The name of the series.")
-    entry: str = Field(
+    entry: float = Field(
         title="Series Entry",
         description="The entry of the book in that series.",
-        examples=["1", "2", "2.5"],
+        examples=[1, 2, 2.5],
     )
 
 

@@ -17,10 +17,14 @@ from .models import Book, _Series
 # --- Constants ----------------------------------------------------------------
 
 _REVIEW_ID_PATTERN = re.compile(r"^freeTextContainerreview")
+
 _PAGE_NUMBER_PATTERN = re.compile(r"(\d{1,6})(?=\D|$)")
-_SERIES_PATTERN = re.compile(r"\((.*?)(?:,\s*|\s+)#(\d+)\)")
-_SERIES_FALLBACK_PATTERN = re.compile(r"^(.*?)(?:,)?\s*Vol\.\s*(\d+)\b")
-_SERIES_PATTERNS = [_SERIES_PATTERN, _SERIES_FALLBACK_PATTERN]
+
+_SERIES_PATTERNS = [
+    re.compile(r"\((.*?)(?:,\s*|\s+)#(\d+(?:\.\d+)?)\)"),
+    re.compile(r"^(.*?)(?:,)?\s*Vol\.\s*(\d+(?:\.\d+)?)\b"),
+    re.compile(r"\((.*?)\s+Book\s+(\d+(?:\.\d+)?)\)"),
+]
 
 _DATE_FORMATS = ("%b %d, %Y", "%b %Y")
 
@@ -72,9 +76,8 @@ class _Parser(ABC):
     Abstract base class for all field parsers.
     """
 
-    @staticmethod
-    @abstractmethod
-    def parse(row: Tag) -> Any | None:
+    @classmethod
+    def parse(cls, row: Tag) -> Any | None:
         """Extract a value from a Goodreads review table row.
 
         Args:
@@ -83,7 +86,57 @@ class _Parser(ABC):
         Returns:
             Value from the tag, or None if no value found.
         """
+        # Step 1: Extract HTML element
+        element = cls._extract_element(row)
+        if element is None:
+            return None
+
+        # Step 2: Extract raw data from element
+        data = cls._extract_data(element)
+        if data is None:
+            return None
+
+        # Step 3: Transform data into final form
+        return cls._transform_data(data)
+
+    @staticmethod
+    @abstractmethod
+    def _extract_element(row: Tag) -> Tag | None:
+        """Extract the relevant HTML element(s) from the row.
+
+        Args:
+            row: The BS4 Tag to extract elements from.
+
+        Returns:
+            The extracted element(s) as Tag or None if not found.
+        """
         raise NotImplementedError
+
+    @staticmethod
+    @abstractmethod
+    def _extract_data(element: Tag) -> str | None:
+        """Extract raw data from the element(s).
+
+        Args:
+            element: The element to extract data from (always a Tag).
+
+        Returns:
+            The extracted raw data as string or None if not found.
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    def _transform_data(data: str) -> Any:
+        """Transform the raw data into the final form.
+
+        Args:
+            data: The raw data to transform (always a string).
+
+        Returns:
+            The transformed data in the appropriate type.
+        """
+
+        return data
 
 
 # --- Concrete parsers ---------------------------------------------------------
@@ -94,14 +147,16 @@ class _AuthorParser(_Parser):
     Extract author name from review row.
     """
 
-    @override
     @staticmethod
-    def parse(row: Tag) -> str | None:
-        cell = _get_field_cell(row, "author")
-        if not cell:
-            return None
-        link = cell.find("a")
-        return _safe_find_text(link)
+    @override
+    def _extract_element(row: Tag) -> Tag | None:
+        return _get_field_cell(row, "author")
+
+    @staticmethod
+    @override
+    def _extract_data(element: Tag) -> str | None:
+        link = element.find("a")
+        return _safe_find_text(link) if link else None
 
 
 class _DateParser(_Parser):
@@ -109,24 +164,26 @@ class _DateParser(_Parser):
     Extract and parse date read from review row.
     """
 
-    @override
     @staticmethod
-    def parse(row: Tag) -> datetime | None:
-        cell = _get_field_cell(row, "date_read")
-        if not cell:
-            return None
+    @override
+    def _extract_element(row: Tag) -> Tag | None:
+        return _get_field_cell(row, "date_read")
 
-        # Prefer explicit "date_read_value"; fall back to any <span title="...">
-        span = cell.find("span", class_="date_read_value") or cell.find(
+    @staticmethod
+    @override
+    def _extract_data(element: Tag) -> str | None:
+        span = element.find("span", class_="date_read_value") or element.find(
             "span", title=True
         )
-        date_string = _safe_find_text(span)
-        if not date_string:
-            return None
+        return _safe_find_text(span)
 
+    @staticmethod
+    @override
+    def _transform_data(data: str) -> Any:
         for fmt in _DATE_FORMATS:
             try:
-                return datetime.strptime(date_string, fmt).replace(tzinfo=UTC)
+                dt = datetime.strptime(data, fmt).replace(tzinfo=UTC)
+                return dt.date()
             except ValueError:
                 continue
         return None
@@ -137,15 +194,21 @@ class _PageNumberParser(_Parser):
     Extract number of pages from review row.
     """
 
-    @override
     @staticmethod
-    def parse(row: Tag) -> int | None:
-        cell = _get_field_cell(row, "num_pages")
-        if not cell:
-            return None
-        nobr = cell.find("nobr")
-        text = _safe_find_text(nobr, strip=True)
-        return _extract_number(text, _PAGE_NUMBER_PATTERN)
+    @override
+    def _extract_element(row: Tag) -> Tag | None:
+        return _get_field_cell(row, "num_pages")
+
+    @staticmethod
+    @override
+    def _extract_data(element: Tag) -> str | None:
+        nobr = element.find("nobr")
+        return _safe_find_text(nobr, strip=True)
+
+    @staticmethod
+    @override
+    def _transform_data(data: str) -> Any:
+        return _extract_number(data, _PAGE_NUMBER_PATTERN)
 
 
 class _RatingParser(_Parser):
@@ -153,17 +216,23 @@ class _RatingParser(_Parser):
     Extract user rating from review row.
     """
 
-    @override
     @staticmethod
-    def parse(row: Tag) -> int:
-        cell = _get_field_cell(row, "rating")
-        if not cell:
-            return 0
-        span = cell.find("span", class_="staticStars")
+    @override
+    def _extract_element(row: Tag) -> Tag | None:
+        return _get_field_cell(row, "rating")
+
+    @staticmethod
+    @override
+    def _extract_data(element: Tag) -> str | None:
+        span = element.find("span", class_="staticStars")
         title = span.get("title") if isinstance(span, Tag) else None
-        if not isinstance(title, str):
-            return 0
-        return int(_STRING_TO_RATING.get(title.lower(), 0))
+        return title if isinstance(title, str) else None
+
+    @staticmethod
+    @override
+    def _transform_data(data: str) -> Any:
+        rating = _STRING_TO_RATING.get(data.lower())
+        return int(rating) if rating is not None else None
 
 
 class _ReviewParser(_Parser):
@@ -171,11 +240,16 @@ class _ReviewParser(_Parser):
     Extract review text from review row.
     """
 
-    @override
     @staticmethod
-    def parse(row: Tag) -> str | None:
-        span = row.find("span", {"id": _REVIEW_ID_PATTERN})
-        return _safe_find_text(span)
+    @override
+    def _extract_element(row: Tag) -> Tag | None:
+        element = row.find("span", {"id": _REVIEW_ID_PATTERN})
+        return element if isinstance(element, Tag) else None
+
+    @staticmethod
+    @override
+    def _extract_data(element: Tag) -> str | None:
+        return _safe_find_text(element)
 
 
 class _SeriesParser(_Parser):
@@ -183,9 +257,9 @@ class _SeriesParser(_Parser):
     Extract series information from review row.
     """
 
-    @override
     @staticmethod
-    def parse(row: Tag) -> _Series | None:
+    @override
+    def _extract_element(row: Tag) -> Tag | None:
         cell = _get_field_cell(row, "title")
         if not cell:
             return None
@@ -194,21 +268,23 @@ class _SeriesParser(_Parser):
         if not isinstance(link, Tag):
             return None
 
-        # Prefer explicit series span inside the title link
-        series_span = link.find("span", class_="darkGreyText")
-        series_text = (
-            _safe_find_text(series_span, strip=True) if series_span else None
-        )
+        return link
 
-        # Check patterns against the series span text
-        if series_text:
-            for pattern in _SERIES_PATTERNS:
-                match = pattern.match(series_text)
-                if match:
-                    return _Series(
-                        name=match.group(1).strip(),
-                        entry=match.group(2),
-                    )
+    @staticmethod
+    @override
+    def _extract_data(element: Tag) -> str | None:
+        series_span = element.find("span", class_="darkGreyText")
+        return _safe_find_text(series_span, strip=True)
+
+    @staticmethod
+    @override
+    def _transform_data(data: str) -> Any:
+        for pattern in _SERIES_PATTERNS:
+            if match := pattern.match(data):
+                return _Series(
+                    name=match.group(1).strip(),
+                    entry=match.group(2),
+                )
         return None
 
 
@@ -217,9 +293,9 @@ class _TitleParser(_Parser):
     Extract book title from review row.
     """
 
-    @override
     @staticmethod
-    def parse(row: Tag) -> str | None:
+    @override
+    def _extract_element(row: Tag) -> Tag | None:
         cell = _get_field_cell(row, "title")
         if not cell:
             return None
@@ -228,11 +304,14 @@ class _TitleParser(_Parser):
         if not isinstance(link, Tag):
             return None
 
-        # Prefer the direct text node (avoids series span text)
-        if link.contents and isinstance(link.contents[0], str):
-            return link.contents[0].strip()
+        return link
 
-        return link.get_text(strip=True) or None
+    @staticmethod
+    @override
+    def _extract_data(element: Tag) -> str | None:
+        if element.contents and isinstance(element.contents[0], str):
+            return element.contents[0].strip()
+        return element.get_text(strip=True) or None
 
 
 def _parse_row(row: Tag) -> dict[str, Any]:
@@ -282,7 +361,7 @@ def _parse_books_from_html(html: str) -> list[Book]:
         try:
             book = Book.model_validate(attributes)
         except ValidationError as exc:
-            warn(str(exc), stacklevel=2)
+            warn(str(exc), stacklevel=1)
         else:
             books.append(book)
     return books

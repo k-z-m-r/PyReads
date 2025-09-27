@@ -10,10 +10,10 @@ from pydantic import BaseModel, Field, model_validator
 
 class _Series(BaseModel):
     name: str = Field(title="Name", description="The name of the series.")
-    entry: str = Field(
+    entry: float = Field(
         title="Series Entry",
         description="The entry of the book in that series.",
-        examples=["1", "2", "2.5"],
+        examples=[1, 2, 2.5],
     )
 
 
@@ -32,9 +32,10 @@ class Book(BaseModel):
         description="The date that the user finished the book.",
         default=None,
     )
-    userRating: Literal[0, 1, 2, 3, 4, 5] = Field(
+    userRating: Literal[1, 2, 3, 4, 5] | None = Field(
         title="User Rating",
         description="The rating that the user gave the book.",
+        default=None,
     )
     userReview: str | None = Field(
         title="User Review",
@@ -46,11 +47,11 @@ class Book(BaseModel):
         description="The name of the series the book belongs to (if any).",
         default=None,
     )
-    seriesEntry: str | None = Field(
+    seriesEntry: float | None = Field(
         title="Series Entry",
         description="The book's position in the series.",
         default=None,
-        examples=["1", "1.5"],
+        examples=[1, 1.5],
     )
 
     @model_validator(mode="after")
@@ -73,8 +74,13 @@ class Book(BaseModel):
             (title) (series) by (authorName)
         """
         title = f"{self.title} "
-        if self.seriesName:
-            title += f"({self.seriesName}, #{self.seriesEntry}) "
+        if self.seriesName and self.seriesEntry:
+            series_entry = (
+                int(self.seriesEntry)
+                if self.seriesEntry.is_integer()
+                else self.seriesEntry
+            )
+            title += f"({self.seriesName}, #{series_entry}) "
         title += f"by {self.authorName}"
         return title
 

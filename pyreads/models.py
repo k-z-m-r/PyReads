@@ -110,4 +110,4 @@ class Library(BaseModel):
             raw = book.model_dump()
             records.append({field_titles[k]: v for k, v in raw.items()})
 
-        return DataFrame(records)
+        return DataFrame(records).replace({float("nan"): None})

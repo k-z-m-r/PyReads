@@ -3,9 +3,9 @@ dependencies = [
     "httpx==0.28.1",
     "bs4==0.0.2",
     "lxml==6.0.0",
-    "pandas==2.3.1",
     "pydantic==2.11.7",
-    "tqdm==4.67.1"
+    "tqdm==4.67.1",
+    "polars[pandas]==1.33.1"
 ]
 name = "pyreads"
 description = "PyReads package to process Goodreads site data."

@@ -17,7 +17,7 @@ pip install pyreads
   - `httpx==0.28.1`
   - `bs4==0.0.2`
   - `lxml==6.0.0`
-  - `pandas==2.3.1`
+  - `polars==1.33.1`
   - `pydantic==2.11.7`
   - `tqdm==4.67.1`
 
@@ -39,14 +39,7 @@ library = fetch_library(user_id)
 # Print the books in your library
 for book in library.books:
     print(book.full_title)
-```
 
-### Example Output
-
-```plaintext
-Bear and the Three Goldilocks by Horne, Patrick
-The Starving Saints by Starling, Caitlin
-Straight by Tingle, Chuck
-Brave New World by Huxley, Aldous
-The Hellbound Heart by Barker, Clive
+# Show library dataframe
+library.dataframe
 ```

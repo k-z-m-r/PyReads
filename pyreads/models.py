@@ -2,9 +2,26 @@
 
 from datetime import date
 from functools import cached_property
-from typing import Literal, Self
+from types import UnionType
+from typing import (
+    Any,
+    Literal,
+    Self,
+    Union,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
 
-from pandas import DataFrame
+from polars import (
+    DataFrame,
+    DataType,
+    Date,
+    Float32,
+    Int16,
+    Object,
+    Utf8,
+)
 from pydantic import BaseModel, Field, model_validator
 
 
@@ -84,6 +101,54 @@ class Book(BaseModel):
         title += f"by {self.authorName}"
         return title
 
+    @classmethod
+    def get_polars_schema(cls) -> dict[str, Any]:
+        """Get Polars schema from Pydantic model for Book."""
+
+        def _convert_annotation_to_polars_datatype(
+            annotation: Any,
+        ) -> type[DataType]:
+            """Map a Python/typing annotation to a Polars DataType."""
+            origin = get_origin(annotation)
+
+            if origin in (Union, UnionType):
+                args = [a for a in get_args(annotation) if a is not type(None)]
+                annotation = args[0] if args else None
+                origin = (
+                    get_origin(annotation) if annotation is not None else None
+                )
+            if origin is Literal:
+                literal = get_args(annotation)
+                annotation = type(literal[0])
+
+            if annotation is int:
+                return Int16
+            if annotation is float:
+                return Float32
+            if annotation is str:
+                return Utf8
+            if annotation is date:
+                return Date
+            return Object
+
+        type_hints = get_type_hints(cls)
+        annotations = {
+            field_name: type_hints[field_name]
+            for field_name in cls.model_fields
+        }
+        field_titles = {
+            name: field.title
+            for name, field in Book.model_fields.items()
+            if field.title is not None
+        }
+        return {
+            field_titles[name]: _convert_annotation_to_polars_datatype(
+                annotation
+            )
+            for name, annotation in annotations.items()
+            if name in field_titles
+        }
+
 
 class Library(BaseModel):
     userId: int = Field(
@@ -101,13 +166,16 @@ class Library(BaseModel):
         Returns:
             Pandas dataframe where the headers correspond to the field titles.
         """
-        field_titles = {
-            name: field.title for name, field in Book.model_fields.items()
+
+        headers = {
+            name: field.title
+            for name, field in Book.model_fields.items()
+            if field.title is not None
+        }
+        schema = Book.get_polars_schema()
+        columns: dict[str, list[object]] = {
+            header: [getattr(book, name) for book in self.books]
+            for name, header in headers.items()
         }
 
-        records = []
-        for book in self.books:
-            raw = book.model_dump()
-            records.append({field_titles[k]: v for k, v in raw.items()})
-
-        return DataFrame(records).replace({float("nan"): None})
+        return DataFrame(columns, schema=schema)

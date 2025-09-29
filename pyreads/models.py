@@ -106,16 +106,8 @@ class Book(BaseModel):
         return title
 
     @classmethod
-    def _get_field_annotations(cls) -> dict[str, Any]:
-        annotations = get_type_hints(cls)
-        return {
-            field_name: annotations[field_name]
-            for field_name in cls.model_fields
-        }
-
-    @classmethod
     def get_polars_schema(cls) -> dict[str, Any]:
-        """Map a Python/typing annotation to a Polars DataType."""
+        """Get Polars schema from Pydantic model for Book."""
 
         def _convert_annotation_to_polars_datatype(
             annotation: Any,
@@ -155,15 +147,22 @@ class Book(BaseModel):
                 return Time
             return Object
 
-        headers = {
+        type_hints = get_type_hints(cls)
+        annotations = {
+            field_name: type_hints[field_name]
+            for field_name in cls.model_fields
+        }
+        field_titles = {
             name: field.title
             for name, field in Book.model_fields.items()
             if field.title is not None
         }
         return {
-            headers[name]: _convert_annotation_to_polars_datatype(annotation)
-            for name, annotation in cls._get_field_annotations().items()
-            if name in headers
+            field_titles[name]: _convert_annotation_to_polars_datatype(
+                annotation
+            )
+            for name, annotation in annotations.items()
+            if name in field_titles
         }
 
 

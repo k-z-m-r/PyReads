@@ -1,11 +1,75 @@
 """Pydantic data models."""
 
-from datetime import date
+from datetime import date, datetime, time
 from functools import cached_property
-from typing import Literal, Self
+from types import UnionType
+from typing import (
+    Annotated,
+    Any,
+    Literal,
+    Self,
+    Union,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
 
-from polars import DataFrame
+from polars import (
+    Boolean,
+    DataFrame,
+    DataType,
+    Date,
+    Datetime,
+    Float32,
+    Int16,
+    Object,
+    Time,
+    Utf8,
+)
 from pydantic import BaseModel, Field, model_validator
+
+
+def _get_fields_annotations() -> dict[str, Any]:
+    default_annotations = get_type_hints(Book)
+    return {
+        field_name: default_annotations[field_name]
+        for field_name in Book.model_fields
+    }
+
+
+def _annotation_to_polars_type(annotation: Any) -> type[DataType]:
+    """Map a Python/typing annotation to a Polars DataType."""
+    if get_origin(annotation) is Annotated:
+        annotation = get_args(annotation)[0]
+
+    origin = get_origin(annotation)
+
+    if origin in (Union, UnionType):
+        args = [a for a in get_args(annotation) if a is not type(None)]
+        annotation = args[0] if args else None
+        origin = get_origin(annotation) if annotation is not None else None
+
+    if origin is Literal:
+        lit = get_args(annotation)
+        if not lit:
+            return Object
+        annotation = type(lit[0])
+
+    if annotation is int:
+        return Int16
+    if annotation is float:
+        return Float32
+    if annotation is str:
+        return Utf8
+    if annotation is bool:
+        return Boolean
+    if annotation is date:
+        return Date
+    if annotation is datetime:
+        return Datetime
+    if annotation is time:
+        return Time
+    return Object
 
 
 class _Series(BaseModel):
@@ -107,9 +171,15 @@ class Library(BaseModel):
             for name, field in Book.model_fields.items()
             if field.title is not None
         }
+        annotations = _get_fields_annotations()
+        schema = {
+            headers[name]: _annotation_to_polars_type(ann)
+            for name, ann in annotations.items()
+            if name in headers
+        }
         columns: dict[str, list[object]] = {
             header: [getattr(book, name) for book in self.books]
             for name, header in headers.items()
         }
 
-        return DataFrame(columns)
+        return DataFrame(columns, schema=schema)

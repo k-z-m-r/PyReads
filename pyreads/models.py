@@ -1,10 +1,9 @@
 """Pydantic data models."""
 
-from datetime import date, datetime, time
+from datetime import date
 from functools import cached_property
 from types import UnionType
 from typing import (
-    Annotated,
     Any,
     Literal,
     Self,
@@ -15,15 +14,12 @@ from typing import (
 )
 
 from polars import (
-    Boolean,
     DataFrame,
     DataType,
     Date,
-    Datetime,
     Float32,
     Int16,
     Object,
-    Time,
     Utf8,
 )
 from pydantic import BaseModel, Field, model_validator
@@ -113,9 +109,6 @@ class Book(BaseModel):
             annotation: Any,
         ) -> type[DataType]:
             """Map a Python/typing annotation to a Polars DataType."""
-            if get_origin(annotation) is Annotated:
-                annotation = get_args(annotation)[0]
-
             origin = get_origin(annotation)
 
             if origin in (Union, UnionType):
@@ -124,12 +117,9 @@ class Book(BaseModel):
                 origin = (
                     get_origin(annotation) if annotation is not None else None
                 )
-
             if origin is Literal:
-                lit = get_args(annotation)
-                if not lit:
-                    return Object
-                annotation = type(lit[0])
+                literal = get_args(annotation)
+                annotation = type(literal[0])
 
             if annotation is int:
                 return Int16
@@ -137,14 +127,8 @@ class Book(BaseModel):
                 return Float32
             if annotation is str:
                 return Utf8
-            if annotation is bool:
-                return Boolean
             if annotation is date:
                 return Date
-            if annotation is datetime:
-                return Datetime
-            if annotation is time:
-                return Time
             return Object
 
         type_hints = get_type_hints(cls)

@@ -76,7 +76,7 @@ def test_library_dataframe(
     assert len(df) == 2
 
     # Check that first row matches first book data
-    first_row: dict[str, Any] = df.iloc[0].to_dict()
+    first_row: dict[str, Any] = df.slice(0, 1).to_dicts()[0]
 
     # Map titles back to model attributes
     field_map = {

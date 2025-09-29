@@ -4,7 +4,7 @@ from datetime import date
 from functools import cached_property
 from typing import Literal, Self
 
-from pandas import DataFrame
+from polars import DataFrame
 from pydantic import BaseModel, Field, model_validator
 
 
@@ -101,13 +101,15 @@ class Library(BaseModel):
         Returns:
             Pandas dataframe where the headers correspond to the field titles.
         """
-        field_titles = {
-            name: field.title for name, field in Book.model_fields.items()
+
+        headers = {
+            name: field.title
+            for name, field in Book.model_fields.items()
+            if field.title is not None
+        }
+        columns: dict[str, list[object]] = {
+            header: [getattr(book, name) for book in self.books]
+            for name, header in headers.items()
         }
 
-        records = []
-        for book in self.books:
-            raw = book.model_dump()
-            records.append({field_titles[k]: v for k, v in raw.items()})
-
-        return DataFrame(records).replace({float("nan"): None})
+        return DataFrame(columns)

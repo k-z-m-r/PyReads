@@ -109,27 +109,13 @@ class Book(BaseModel):
         """
         data = self.model_dump()
 
-        title_to_name = {
-            field.title: name
+        headers = [
+            name
             for name, field in type(self).model_fields.items()
             if field.title is not None
-        }
-
-        headers = self.get_column_headers()
-        return [data[title_to_name[title]] for title in headers]
-
-    @classmethod
-    def get_column_headers(cls) -> list[str]:
-        """Return the list of column header titles in canonical order.
-
-        The canonical order follows the order of `model_fields` and
-        includes only fields with a non-None `title`.
-        """
-        return [
-            field.title
-            for field in cls.model_fields.values()
-            if field.title is not None
         ]
+
+        return [data[title] for title in headers]
 
     @classmethod
     def get_polars_schema(cls) -> dict[str, Any]:
@@ -197,13 +183,8 @@ class Library(BaseModel):
             Pandas dataframe where the headers correspond to the field titles.
         """
 
-        headers = Book.get_column_headers()
-        schema = Book.get_polars_schema()
-
-        rows = [book.create_row() for book in self.books]
-
-        columns: dict[str, list[object]] = {
-            header: [row[i] for row in rows] for i, header in enumerate(headers)
-        }
-
-        return DataFrame(columns, schema=schema)
+        return DataFrame(
+            data=[book.create_row() for book in self.books],
+            schema=Book.get_polars_schema(),
+            orient="row",
+        )

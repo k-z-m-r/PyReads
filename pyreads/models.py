@@ -35,6 +35,10 @@ class _Series(BaseModel):
 
 
 class Book(BaseModel):
+    """
+    Designative class for all Book models.
+    """
+
     title: str = Field(title="Title", description="The title of the book.")
     authorName: str = Field(
         title="Author Name", description="The name of the author."
@@ -101,14 +105,32 @@ class Book(BaseModel):
         title += f"by {self.authorName}"
         return title
 
+    def create_row(self) -> list[Any]:
+        """
+        Return a list of values for the book.
+        """
+        data = self.model_dump()
+
+        headers = [
+            name
+            for name, field in type(self).model_fields.items()
+            if field.title is not None
+        ]
+
+        return [data[field_name] for field_name in headers]
+
     @classmethod
     def get_polars_schema(cls) -> dict[str, Any]:
-        """Get Polars schema from Pydantic model for Book."""
+        """
+        Get Polars schema from Pydantic model for Book.
+        """
 
         def _convert_annotation_to_polars_datatype(
             annotation: Any,
         ) -> type[DataType]:
-            """Map a Python/typing annotation to a Polars DataType."""
+            """
+            Map a Python/typing annotation to a Polars DataType.
+            """
             origin = get_origin(annotation)
 
             if origin in (Union, UnionType):
@@ -151,6 +173,10 @@ class Book(BaseModel):
 
 
 class Library(BaseModel):
+    """
+    Designative class for all Library models.
+    """
+
     userId: int = Field(
         title="User ID", description="The Goodreads user ID for the library."
     )
@@ -167,15 +193,8 @@ class Library(BaseModel):
             Pandas dataframe where the headers correspond to the field titles.
         """
 
-        headers = {
-            name: field.title
-            for name, field in Book.model_fields.items()
-            if field.title is not None
-        }
-        schema = Book.get_polars_schema()
-        columns: dict[str, list[object]] = {
-            header: [getattr(book, name) for book in self.books]
-            for name, header in headers.items()
-        }
-
-        return DataFrame(columns, schema=schema)
+        return DataFrame(
+            data=[book.create_row() for book in self.books],
+            schema=Book.get_polars_schema(),
+            orient="row",
+        )

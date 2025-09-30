@@ -35,6 +35,10 @@ class _Series(BaseModel):
 
 
 class Book(BaseModel):
+    """
+    Designative class for all Book models.
+    """
+
     title: str = Field(title="Title", description="The title of the book.")
     authorName: str = Field(
         title="Author Name", description="The name of the author."
@@ -101,11 +105,9 @@ class Book(BaseModel):
         title += f"by {self.authorName}"
         return title
 
-    def create_row(self) -> list[object]:
-        """Return a list of values for the book in the canonical column order.
-
-        Use Pydantic's model_dump() to get the field values and return
-        them in the same order as the model fields that have a `title`.
+    def create_row(self) -> list[Any]:
+        """
+        Return a list of values for the book.
         """
         data = self.model_dump()
 
@@ -119,12 +121,16 @@ class Book(BaseModel):
 
     @classmethod
     def get_polars_schema(cls) -> dict[str, Any]:
-        """Get Polars schema from Pydantic model for Book."""
+        """
+        Get Polars schema from Pydantic model for Book.
+        """
 
         def _convert_annotation_to_polars_datatype(
             annotation: Any,
         ) -> type[DataType]:
-            """Map a Python/typing annotation to a Polars DataType."""
+            """
+            Map a Python/typing annotation to a Polars DataType.
+            """
             origin = get_origin(annotation)
 
             if origin in (Union, UnionType):
@@ -167,6 +173,10 @@ class Book(BaseModel):
 
 
 class Library(BaseModel):
+    """
+    Designative class for all Library models.
+    """
+
     userId: int = Field(
         title="User ID", description="The Goodreads user ID for the library."
     )

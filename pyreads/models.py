@@ -117,7 +117,7 @@ class Book(BaseModel):
             if field.title is not None
         ]
 
-        return [data[title] for title in headers]
+        return [data[field_name] for field_name in headers]
 
     @classmethod
     def get_polars_schema(cls) -> dict[str, Any]:

@@ -101,6 +101,36 @@ class Book(BaseModel):
         title += f"by {self.authorName}"
         return title
 
+    def create_row(self) -> list[object]:
+        """Return a list of values for the book in the canonical column order.
+
+        Use Pydantic's model_dump() to get the field values and return
+        them in the same order as the model fields that have a `title`.
+        """
+        data = self.model_dump()
+
+        title_to_name = {
+            field.title: name
+            for name, field in type(self).model_fields.items()
+            if field.title is not None
+        }
+
+        headers = self.get_column_headers()
+        return [data[title_to_name[title]] for title in headers]
+
+    @classmethod
+    def get_column_headers(cls) -> list[str]:
+        """Return the list of column header titles in canonical order.
+
+        The canonical order follows the order of `model_fields` and
+        includes only fields with a non-None `title`.
+        """
+        return [
+            field.title
+            for field in cls.model_fields.values()
+            if field.title is not None
+        ]
+
     @classmethod
     def get_polars_schema(cls) -> dict[str, Any]:
         """Get Polars schema from Pydantic model for Book."""
@@ -167,15 +197,13 @@ class Library(BaseModel):
             Pandas dataframe where the headers correspond to the field titles.
         """
 
-        headers = {
-            name: field.title
-            for name, field in Book.model_fields.items()
-            if field.title is not None
-        }
+        headers = Book.get_column_headers()
         schema = Book.get_polars_schema()
+
+        rows = [book.create_row() for book in self.books]
+
         columns: dict[str, list[object]] = {
-            header: [getattr(book, name) for book in self.books]
-            for name, header in headers.items()
+            header: [row[i] for row in rows] for i, header in enumerate(headers)
         }
 
         return DataFrame(columns, schema=schema)
